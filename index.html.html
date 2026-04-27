@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reholstered — Find Your Perfect Holster</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0b0d;--bg2:#111318;--bg3:#181c22;--bg4:#1f242d;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+    --accent:#c8973a;--accent2:#e8b55a;--accent-dim:rgba(200,151,58,0.12);
+    --text:#e8e6e0;--text2:#9a9690;--text3:#5c5a56;
+    --font-head:'Barlow Condensed',sans-serif;--font-body:'Barlow',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.4;}
+  nav{position:sticky;top:0;z-index:100;background:rgba(10,11,13,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;}
+  .logo{font-family:var(--font-head);font-size:26px;font-weight:900;letter-spacing:0.05em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:10px;}
+  .logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;display:inline-block;box-shadow:0 0 8px var(--accent);}
+  .nav-links{display:flex;gap:2rem;list-style:none;}
+  .nav-links a{color:var(--text2);text-decoration:none;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;font-weight:500;transition:color 0.2s;}
+  .nav-links a:hover,.nav-links a.active{color:var(--accent);}
+  .nav-btn{background:var(--accent);color:#0a0b0d;border:none;padding:8px 18px;font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,transform 0.1s;}
+  .nav-btn:hover{background:var(--accent2);transform:translateY(-1px);}
+  .hero{position:relative;padding:80px 2rem 60px;text-align:center;overflow:hidden;}
+  .hero-bg-lines{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,rgba(200,151,58,0.03) 0px,rgba(200,151,58,0.03) 1px,transparent 1px,transparent 60px),repeating-linear-gradient(0deg,rgba(200,151,58,0.03) 0px,rgba(200,151,58,0.03) 1px,transparent 1px,transparent 60px);pointer-events:none;}
+  .hero-tag{display:inline-block;background:var(--accent-dim);border:1px solid rgba(200,151,58,0.3);color:var(--accent);font-size:11px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;padding:5px 14px;margin-bottom:20px;}
+  .hero h1{font-family:var(--font-head);font-size:clamp(48px,8vw,88px);font-weight:900;line-height:0.9;letter-spacing:-0.01em;text-transform:uppercase;color:var(--text);margin-bottom:6px;}
+  .hero h1 span{color:var(--accent);display:block;}
+  .hero-sub{color:var(--text2);font-size:16px;font-weight:300;margin-top:18px;letter-spacing:0.02em;}
+  .stat-bar{display:flex;justify-content:center;gap:0;margin:40px auto 0;max-width:600px;border:1px solid var(--border2);}
+  .stat-item{flex:1;padding:16px 20px;border-right:1px solid var(--border2);text-align:center;}
+  .stat-item:last-child{border-right:none;}
+  .stat-num{font-family:var(--font-head);font-size:30px;font-weight:900;color:var(--accent);line-height:1;}
+  .stat-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-top:4px;}
+  .brand-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:20px 2rem;background:var(--bg2);overflow:hidden;}
+  .brand-strip-label{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);text-align:center;margin-bottom:16px;}
+  .brand-scroll{display:flex;gap:32px;animation:scroll 40s linear infinite;white-space:nowrap;width:max-content;}
+  @keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+  .brand-name{font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);}
+  .tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);}
+  .tab{padding:14px 28px;font-family:var(--font-head);font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;transition:color 0.2s;position:relative;top:1px;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .used-badge{display:inline-block;background:rgba(200,151,58,0.15);border:1px solid rgba(200,151,58,0.3);color:var(--accent);font-size:9px;font-weight:700;letter-spacing:0.1em;padding:2px 6px;margin-left:8px;vertical-align:middle;}
+  .search-section{position:relative;z-index:1;padding:40px 2rem 60px;max-width:1100px;margin:0 auto;}
+  .search-panel{background:var(--bg2);border:1px solid var(--border2);padding:32px;position:relative;margin-bottom:32px;}
+  .search-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),transparent);}
+  .search-label{font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-weight:600;}
+  .filter-grid{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .filter-group{display:flex;flex-direction:column;}
+  .select-wrap{position:relative;}
+  .select-wrap::after{content:'▾';position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--accent);pointer-events:none;font-size:12px;}
+  .filter-group select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:12px 36px 12px 14px;font-family:var(--font-body);font-size:14px;appearance:none;-webkit-appearance:none;cursor:pointer;outline:none;transition:border-color 0.2s;width:100%;}
+  .filter-group select:hover,.filter-group select:focus{border-color:var(--accent);}
+  .filter-group select option{background:#181c22;color:var(--text);}
+  .filter-group select optgroup{color:var(--accent);font-size:12px;}
+  .search-actions{display:flex;gap:12px;align-items:center;}
+  .btn-search{background:var(--accent);color:#0a0b0d;border:none;padding:14px 36px;font-family:var(--font-head);font-size:16px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,transform 0.1s;flex:1;}
+  .btn-search:hover{background:var(--accent2);transform:translateY(-1px);}
+  .btn-reset{background:transparent;color:var(--text3);border:1px solid var(--border2);padding:14px 20px;font-family:var(--font-body);font-size:13px;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;transition:color 0.2s;}
+  .btn-reset:hover{color:var(--text);}
+  .results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .results-count{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--text);}
+  .results-count span{color:var(--accent);}
+  .sort-group{display:flex;align-items:center;gap:10px;}
+  .sort-group label{font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);}
+  .sort-group select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 28px 8px 12px;font-size:13px;font-family:var(--font-body);appearance:none;cursor:pointer;outline:none;}
+  .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .product-card{background:var(--bg2);border:1px solid var(--border);position:relative;cursor:pointer;transition:border-color 0.2s,transform 0.2s;overflow:hidden;display:flex;flex-direction:column;animation:fadeUp 0.4s ease forwards;opacity:0;}
+  .product-card:nth-child(1){animation-delay:0.05s;}.product-card:nth-child(2){animation-delay:0.1s;}.product-card:nth-child(3){animation-delay:0.15s;}.product-card:nth-child(4){animation-delay:0.2s;}.product-card:nth-child(5){animation-delay:0.25s;}.product-card:nth-child(6){animation-delay:0.3s;}
+  .product-card:hover{border-color:rgba(200,151,58,0.4);transform:translateY(-2px);}
+  .product-card.in-stock::after{content:'IN STOCK';position:absolute;top:12px;right:12px;background:rgba(39,174,96,0.15);border:1px solid rgba(39,174,96,0.4);color:#4ade80;font-size:9px;font-weight:700;letter-spacing:0.12em;padding:3px 8px;}
+  .product-card.low-stock::after{content:'LOW STOCK';position:absolute;top:12px;right:12px;background:rgba(200,151,58,0.12);border:1px solid rgba(200,151,58,0.35);color:var(--accent2);font-size:9px;font-weight:700;letter-spacing:0.12em;padding:3px 8px;}
+  .product-img{width:100%;height:160px;background:var(--bg3);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);overflow:hidden;position:relative;}
+  .holster-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text3);}
+  .holster-icon{width:56px;height:56px;opacity:0.4;}
+  .brand-badge{position:absolute;bottom:8px;left:8px;background:rgba(10,11,13,0.85);border:1px solid var(--border2);color:var(--text2);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;}
+  .product-body{padding:16px;flex:1;display:flex;flex-direction:column;}
+  .product-brand{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:6px;}
+  .product-name{font-family:var(--font-head);font-size:18px;font-weight:700;line-height:1.2;color:var(--text);margin-bottom:10px;letter-spacing:0.02em;}
+  .product-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
+  .tag{background:var(--bg4);border:1px solid var(--border);color:var(--text3);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;}
+  .tag.highlight{background:var(--accent-dim);border-color:rgba(200,151,58,0.25);color:var(--accent);}
+  .product-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:14px;border-top:1px solid var(--border);}
+  .product-price{font-family:var(--font-head);font-size:24px;font-weight:900;color:var(--text);}
+  .product-price .cents{font-size:14px;color:var(--text2);}
+  .btn-view{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:8px 16px;font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,color 0.2s;}
+  .btn-view:hover{background:var(--accent);color:#0a0b0d;}
+  .empty-state{text-align:center;padding:80px 20px;border:1px dashed var(--border2);grid-column:1/-1;}
+  .empty-state h3{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--text2);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;}
+  .empty-state p{color:var(--text3);font-size:14px;}
+  .coming-soon-section{padding:80px 2rem;text-align:center;max-width:600px;margin:0 auto;}
+  .coming-soon-icon{width:64px;height:64px;background:var(--accent-dim);border:1px solid rgba(200,151,58,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:28px;}
+  .coming-soon-section h2{font-family:var(--font-head);font-size:36px;font-weight:900;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;color:var(--text);}
+  .coming-soon-section p{color:var(--text2);font-size:15px;line-height:1.7;margin-bottom:28px;}
+  .notify-form{display:flex;max-width:400px;margin:0 auto;}
+  .notify-form input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-right:none;color:var(--text);padding:12px 16px;font-family:var(--font-body);font-size:14px;outline:none;}
+  .notify-form button{background:var(--accent);color:#0a0b0d;border:none;padding:12px 20px;font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;white-space:nowrap;}
+  footer{border-top:1px solid var(--border);padding:40px 2rem;display:flex;justify-content:space-between;align-items:center;background:var(--bg2);}
+  footer .logo{font-size:20px;}
+  .footer-links{display:flex;gap:1.5rem;list-style:none;}
+  .footer-links a{color:var(--text3);text-decoration:none;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;transition:color 0.2s;}
+  .footer-links a:hover{color:var(--accent);}
+  .footer-copy{color:var(--text3);font-size:12px;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  .fade-up{animation:fadeUp 0.5s ease forwards;opacity:0;}
+  @media(max-width:768px){.filter-grid{grid-template-columns:1fr 1fr;}.hero h1{font-size:48px;}footer{flex-direction:column;gap:20px;text-align:center;}.nav-links{display:none;}}
+  @media(max-width:480px){.filter-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="logo"><span class="logo-dot"></span>REHOLSTERED</a>
+  <ul class="nav-links">
+    <li><a href="#" class="active">Find Holsters</a></li>
+    <li><a href="#" onclick="document.getElementById('used-tab').click();return false;">Used Market</a></li>
+    <li><a href="#">Brands</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+  <button class="nav-btn" onclick="document.getElementById('used-tab').click()">Sell Your Holster</button>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg-lines"></div>
+  <div class="hero-tag">The Holster Marketplace</div>
+  <h1>Every Holster.<br><span>One Search.</span></h1>
+  <p class="hero-sub">New & used holsters from 80+ manufacturers — filtered by your exact gun, carry style, optic & light.</p>
+  <div class="stat-bar fade-up">
+    <div class="stat-item"><div class="stat-num">80+</div><div class="stat-label">Manufacturers</div></div>
+    <div class="stat-item"><div class="stat-num">4,200+</div><div class="stat-label">Holsters</div></div>
+    <div class="stat-item"><div class="stat-num">2,000+</div><div class="stat-label">Gun Models</div></div>
+    <div class="stat-item"><div class="stat-num">Real-time</div><div class="stat-label">Availability</div></div>
+  </div>
+</section>
+
+<div class="brand-strip">
+  <div class="brand-strip-label">Partnered Manufacturers</div>
+  <div class="brand-scroll">
+    <span class="brand-name">Safariland</span><span class="brand-name">·</span>
+    <span class="brand-name">Blackhawk</span><span class="brand-name">·</span>
+    <span class="brand-name">Alien Gear</span><span class="brand-name">·</span>
+    <span class="brand-name">Vedder</span><span class="brand-name">·</span>
+    <span class="brand-name">Crossbreed</span><span class="brand-name">·</span>
+    <span class="brand-name">Tier 1 Concealed</span><span class="brand-name">·</span>
+    <span class="brand-name">Tulster</span><span class="brand-name">·</span>
+    <span class="brand-name">PHLster</span><span class="brand-name">·</span>
+    <span class="brand-name">Raven Concealment</span><span class="brand-name">·</span>
+    <span class="brand-name">Crucial Concealment</span><span class="brand-name">·</span>
+    <span class="brand-name">Galco</span><span class="brand-name">·</span>
+    <span class="brand-name">DeSantis</span><span class="brand-name">·</span>
+    <span class="brand-name">Concealment Express</span><span class="brand-name">·</span>
+    <span class="brand-name">Bravo Concealment</span><span class="brand-name">·</span>
+    <span class="brand-name">We The People</span><span class="brand-name">·</span>
+    <span class="brand-name">Craft Holsters</span><span class="brand-name">·</span>
+    <span class="brand-name">Falco</span><span class="brand-name">·</span>
+    <span class="brand-name">Safariland</span><span class="brand-name">·</span>
+    <span class="brand-name">Blackhawk</span><span class="brand-name">·</span>
+    <span class="brand-name">Alien Gear</span><span class="brand-name">·</span>
+    <span class="brand-name">Vedder</span><span class="brand-name">·</span>
+    <span class="brand-name">Crossbreed</span><span class="brand-name">·</span>
+    <span class="brand-name">Tier 1 Concealed</span><span class="brand-name">·</span>
+    <span class="brand-name">Tulster</span><span class="brand-name">·</span>
+    <span class="brand-name">PHLster</span><span class="brand-name">·</span>
+    <span class="brand-name">Raven Concealment</span><span class="brand-name">·</span>
+    <span class="brand-name">Crucial Concealment</span><span class="brand-name">·</span>
+    <span class="brand-name">Galco</span><span class="brand-name">·</span>
+    <span class="brand-name">DeSantis</span><span class="brand-name">·</span>
+    <span class="brand-name">Concealment Express</span><span class="brand-name">·</span>
+    <span class="brand-name">Bravo Concealment</span><span class="brand-name">·</span>
+    <span class="brand-name">We The People</span><span class="brand-name">·</span>
+    <span class="brand-name">Craft Holsters</span><span class="brand-name">·</span>
+    <span class="brand-name">Falco</span><span class="brand-name">·</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('new',this)">New Holsters</button>
+  <button class="tab" id="used-tab" onclick="showTab('used',this)">Used Market <span class="used-badge">BETA</span></button>
+</div>
+
+<section class="search-section" id="new-section">
+  <div class="search-panel">
+    <div class="filter-grid">
+
+      <!-- GUN MODEL -->
+      <div class="filter-group">
+        <div class="search-label">Firearm Make &amp; Model</div>
+        <div class="select-wrap">
+          <select id="gunModel">
+            <option value="">Select your handgun...</option>
+
+            <optgroup label="─── 1911 Platform ───">
+              <option value="1911-3">1911 — 3"</option>
+              <option value="1911-35">1911 — 3.5"</option>
+              <option value="1911-4">1911 — 4"</option>
+              <option value="1911-425">1911 — 4.25"</option>
+              <option value="1911-5">1911 — 5"</option>
+              <option value="1911-5-rail">1911 (w/ Rail) — 5"</option>
+              <option value="1911-6">1911 — 6"</option>
+            </optgroup>
+
+            <optgroup label="─── Beretta ───">
+              <option value="beretta-92fs">Beretta 92 FS</option>
+              <option value="beretta-92x">Beretta 92 X Full Size</option>
+              <option value="beretta-92x-compact">Beretta 92 X Compact</option>
+              <option value="beretta-92x-perf">Beretta 92 X Performance</option>
+              <option value="beretta-m9">Beretta M9</option>
+              <option value="beretta-m9a1">Beretta M9A1</option>
+              <option value="beretta-m9a3">Beretta M9A3</option>
+              <option value="beretta-m9a4">Beretta M9A4</option>
+              <option value="beretta-apx">Beretta APX</option>
+              <option value="beretta-apx-carry">Beretta APX Carry</option>
+              <option value="beretta-apx-a1">Beretta APX A1 Full Size</option>
+              <option value="beretta-apx-a1-compact">Beretta APX A1 Compact</option>
+              <option value="beretta-px4">Beretta PX4 Storm</option>
+              <option value="beretta-px4-compact">Beretta PX4 Storm Compact</option>
+              <option value="beretta-px4-sub">Beretta PX4 Storm SubCompact</option>
+            </optgroup>
+
+            <optgroup label="─── Canik ───">
+              <option value="canik-tp9sf">Canik TP9 SF</option>
+              <option value="canik-tp9sfx">Canik TP9 SFx</option>
+              <option value="canik-tp9sc">Canik TP9 SC</option>
+              <option value="canik-tp9elite">Canik TP9 Elite Combat</option>
+              <option value="canik-mete-sf">Canik Mete SF</option>
+              <option value="canik-mete-sft">Canik Mete SFT</option>
+              <option value="canik-mete-sfx">Canik Mete SFx</option>
+              <option value="canik-mete-mc9">Canik Mete MC9</option>
+              <option value="canik-sfx-rival">Canik SFx Rival</option>
+            </optgroup>
+
+            <optgroup label="─── CZ ───">
+              <option value="cz-75b">CZ 75 B</option>
+              <option value="cz-75-compact">CZ 75 Compact</option>
+              <option value="cz-75-sp01">CZ 75 SP-01</option>
+              <option value="cz-75-sp01-tactical">CZ 75 SP-01 Tactical</option>
+              <option value="cz-p01">CZ P-01 / 75 P-01</option>
+              <option value="cz-p07">CZ P-07</option>
+              <option value="cz-p09">CZ P-09</option>
+              <option value="cz-p10c">CZ P-10 C</option>
+              <option value="cz-p10f">CZ P-10 F</option>
+              <option value="cz-p10s">CZ P-10 S</option>
+              <option value="cz-p10sc">CZ P-10 SC</option>
+              <option value="cz-shadow2">CZ Shadow 2</option>
+              <option value="cz-shadow2-compact">CZ Shadow 2 Compact</option>
+              <option value="cz-shadow2-carry">CZ Shadow 2 Carry</option>
+              <option value="cz-rami">CZ 2075 RAMI</option>
+            </optgroup>
+
+            <optgroup label="─── FN ───">
+              <option value="fn-509">FN 509</option>
+              <option value="fn-509c">FN 509 Compact</option>
+              <option value="fn-509m">FN 509 Midsize</option>
+              <option value="fn-509t">FN 509 Tactical</option>
+              <option value="fn-fnx45">FN FNX-45</option>
+              <option value="fn-fnx45t">FN FNX-45 Tactical</option>
+              <option value="fn-fns9">FN FNS-9</option>
+              <option value="fn-five7">FN Five-seveN</option>
+            </optgroup>
+
+            <optgroup label="─── Glock ───">
+              <option value="glock-17">Glock 17 (Gen 3/4/5)</option>
+              <option value="glock-17l">Glock 17L</option>
+              <option value="glock-19">Glock 19 (Gen 3/4/5)</option>
+              <option value="glock-19gen6">Glock 19 Gen 6</option>
+              <option value="glock-19x">Glock 19X</option>
+              <option value="glock-20">Glock 20</option>
+              <option value="glock-21">Glock 21</option>
+              <option value="glock-22">Glock 22</option>
+              <option value="glock-23">Glock 23</option>
+              <option value="glock-26">Glock 26</option>
+              <option value="glock-27">Glock 27</option>
+              <option value="glock-29">Glock 29</option>
+              <option value="glock-30">Glock 30</option>
+              <option value="glock-34">Glock 34</option>
+              <option value="glock-35">Glock 35</option>
+              <option value="glock-40">Glock 40 MOS</option>
+              <option value="glock-41">Glock 41</option>
+              <option value="glock-42">Glock 42</option>
+              <option value="glock-43">Glock 43</option>
+              <option value="glock-43x">Glock 43X / MOS</option>
+              <option value="glock-45">Glock 45</option>
+              <option value="glock-48">Glock 48 / MOS</option>
+            </optgroup>
+
+            <optgroup label="─── H&K ───">
+              <option value="hk-vp9">H&amp;K VP9</option>
+              <option value="hk-vp9sk">H&amp;K VP9SK</option>
+              <option value="hk-vp40">H&amp;K VP40</option>
+              <option value="hk-p30">H&amp;K P30</option>
+              <option value="hk-p30l">H&amp;K P30L</option>
+              <option value="hk-p30sk">H&amp;K P30SK</option>
+              <option value="hk-usp">H&amp;K USP Full Size</option>
+              <option value="hk-usp-compact">H&amp;K USP Compact</option>
+              <option value="hk-p2000">H&amp;K P2000</option>
+              <option value="hk-p2000sk">H&amp;K P2000SK</option>
+              <option value="hk-sfp9">H&amp;K SFP9 / VP9 OR</option>
+            </optgroup>
+
+            <optgroup label="─── Kimber ───">
+              <option value="kimber-micro9">Kimber Micro 9</option>
+              <option value="kimber-micro380">Kimber Micro .380</option>
+              <option value="kimber-1911-5">Kimber 1911 — 5"</option>
+              <option value="kimber-1911-4">Kimber 1911 — 4"</option>
+              <option value="kimber-r7-mako">Kimber R7 Mako</option>
+            </optgroup>
+
+            <optgroup label="─── Mossberg ───">
+              <option value="mossberg-mc1">Mossberg MC1sc</option>
+              <option value="mossberg-mc2">Mossberg MC2c</option>
+              <option value="mossberg-mc2sc">Mossberg MC2sc</option>
+            </optgroup>
+
+            <optgroup label="─── PSA ───">
+              <option value="psa-dagger-full">PSA Dagger Full Size</option>
+              <option value="psa-dagger-compact">PSA Dagger Compact</option>
+            </optgroup>
+
+            <optgroup label="─── Ruger ───">
+              <option value="ruger-57">Ruger 5.7</option>
+              <option value="ruger-american">Ruger American Pistol</option>
+              <option value="ruger-american-compact">Ruger American Compact</option>
+              <option value="ruger-ec9s">Ruger EC9s</option>
+              <option value="ruger-lc9s">Ruger LC9s</option>
+              <option value="ruger-lcp">Ruger LCP</option>
+              <option value="ruger-lcp2">Ruger LCP II</option>
+              <option value="ruger-lcp-max">Ruger LCP Max</option>
+              <option value="ruger-max9">Ruger Max-9</option>
+              <option value="ruger-rxm">Ruger RXM</option>
+              <option value="ruger-security9">Ruger Security-9</option>
+              <option value="ruger-security380">Ruger Security-380</option>
+              <option value="ruger-sr9">Ruger SR9</option>
+              <option value="ruger-sr9c">Ruger SR9c</option>
+            </optgroup>
+
+            <optgroup label="─── Sig Sauer ───">
+              <option value="sig-p210">Sig P210</option>
+              <option value="sig-p220">Sig P220</option>
+              <option value="sig-p224">Sig P224</option>
+              <option value="sig-p226">Sig P226</option>
+              <option value="sig-p226-legion">Sig P226 Legion</option>
+              <option value="sig-p227">Sig P227</option>
+              <option value="sig-p228">Sig P228</option>
+              <option value="sig-p229">Sig P229</option>
+              <option value="sig-p238">Sig P238</option>
+              <option value="sig-p239">Sig P239</option>
+              <option value="sig-p290">Sig P290</option>
+              <option value="sig-p320-full">Sig P320 Full Size</option>
+              <option value="sig-p320-carry">Sig P320 Carry</option>
+              <option value="sig-p320-compact">Sig P320 Compact</option>
+              <option value="sig-p320-subcompact">Sig P320 SubCompact</option>
+              <option value="sig-p320-xcarry">Sig P320 X-Carry</option>
+              <option value="sig-p320-xfull">Sig P320 X-Full</option>
+              <option value="sig-p320-xten">Sig P320 X-Ten</option>
+              <option value="sig-p365">Sig P365</option>
+              <option value="sig-p365xl">Sig P365XL</option>
+              <option value="sig-p365x">Sig P365-X Macro</option>
+              <option value="sig-p365-fuse">Sig P365 Fuse</option>
+              <option value="sig-p365-nitron">Sig P365 Nitron</option>
+              <option value="sig-p938">Sig P938</option>
+              <option value="sig-sp2022">Sig SP2022</option>
+            </optgroup>
+
+            <optgroup label="─── Smith &amp; Wesson ───">
+              <option value="sw-mp9-full">S&amp;W M&amp;P9 Full Size</option>
+              <option value="sw-mp9-compact">S&amp;W M&amp;P9 Compact</option>
+              <option value="sw-mp9-shield">S&amp;W M&amp;P9 Shield</option>
+              <option value="sw-mp9-shield-plus">S&amp;W M&amp;P9 Shield Plus</option>
+              <option value="sw-mp9-shield-ez">S&amp;W M&amp;P9 Shield EZ</option>
+              <option value="sw-mp2-full">S&amp;W M&amp;P M2.0 Full Size</option>
+              <option value="sw-mp2-compact">S&amp;W M&amp;P M2.0 Compact</option>
+              <option value="sw-mp2-subcompact">S&amp;W M&amp;P M2.0 SubCompact</option>
+              <option value="sw-mp2-pc">S&amp;W M&amp;P M2.0 Performance Center</option>
+              <option value="sw-mp380-ez">S&amp;W M&amp;P 380 Shield EZ</option>
+              <option value="sw-mp40-full">S&amp;W M&amp;P40 Full Size</option>
+              <option value="sw-mp45-full">S&amp;W M&amp;P45 Full Size</option>
+              <option value="sw-csx">S&amp;W CSX</option>
+              <option value="sw-equalizer">S&amp;W Equalizer</option>
+            </optgroup>
+
+            <optgroup label="─── Springfield Armory ───">
+              <option value="sa-echelon">Springfield Echelon</option>
+              <option value="sa-hellcat">Springfield Hellcat</option>
+              <option value="sa-hellcat-pro">Springfield Hellcat Pro</option>
+              <option value="sa-hellcat-rdp">Springfield Hellcat RDP</option>
+              <option value="sa-xd-3">Springfield XD — 3"</option>
+              <option value="sa-xd-4">Springfield XD — 4"</option>
+              <option value="sa-xd-5">Springfield XD — 5"</option>
+              <option value="sa-xdm-38">Springfield XD-M — 3.8"</option>
+              <option value="sa-xdm-46">Springfield XD-M — 4.6"</option>
+              <option value="sa-xdm-elite">Springfield XD-M Elite</option>
+              <option value="sa-xds-33">Springfield XD-S — 3.3"</option>
+              <option value="sa-xds-40">Springfield XD-S — 4"</option>
+              <option value="sa-1911-5">Springfield 1911 — 5"</option>
+              <option value="sa-1911-4">Springfield 1911 — 4"</option>
+              <option value="sa-garrison">Springfield Garrison 1911</option>
+            </optgroup>
+
+            <optgroup label="─── Taurus ───">
+              <option value="taurus-g2c">Taurus G2C</option>
+              <option value="taurus-g3">Taurus G3</option>
+              <option value="taurus-g3c">Taurus G3C</option>
+              <option value="taurus-gx4">Taurus GX4</option>
+              <option value="taurus-gx4-xl">Taurus GX4 XL</option>
+              <option value="taurus-pt111">Taurus PT111 G2</option>
+              <option value="taurus-judge-3">Taurus Judge — 3"</option>
+              <option value="taurus-th9">Taurus TH9</option>
+              <option value="taurus-tx22">Taurus TX22</option>
+            </optgroup>
+
+            <optgroup label="─── Walther ───">
+              <option value="walther-pdp-full">Walther PDP Full Size</option>
+              <option value="walther-pdp-compact">Walther PDP Compact</option>
+              <option value="walther-pdp-f">Walther PDP F-Series</option>
+              <option value="walther-p99">Walther P99</option>
+              <option value="walther-p99c">Walther P99c</option>
+              <option value="walther-ppq-m1">Walther PPQ M1</option>
+              <option value="walther-ppq-m2">Walther PPQ M2</option>
+              <option value="walther-ppq-sc">Walther PPQ SC</option>
+              <option value="walther-pps-m2">Walther PPS M2</option>
+              <option value="walther-creed">Walther Creed</option>
+            </optgroup>
+
+            <optgroup label="─── Other Brands ───">
+              <option value="browning-hipower">Browning Hi-Power</option>
+              <option value="colt-python-6">Colt Python — 6"</option>
+              <option value="colt-1911">Colt 1911 Government</option>
+              <option value="kahr-cm9">Kahr CM9</option>
+              <option value="kahr-pm9">Kahr PM9</option>
+              <option value="kahr-cw9">Kahr CW9</option>
+              <option value="kahr-ct9">Kahr CT9</option>
+              <option value="kel-tec-pf9">Kel-Tec PF9</option>
+              <option value="kel-tec-p17">Kel-Tec P17</option>
+              <option value="kel-tec-p15">Kel-Tec P15</option>
+              <option value="rock-island-1911">Rock Island 1911</option>
+              <option value="sccy-cpx2">SCCY CPX-2</option>
+              <option value="sccy-dvg1">SCCY DVG-1</option>
+              <option value="staccato-p">Staccato P</option>
+              <option value="staccato-c2">Staccato C2</option>
+              <option value="staccato-xc">Staccato XC</option>
+              <option value="tisas-zigana">Tisas Zigana PX-9</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- CARRY POSITION -->
+      <div class="filter-group">
+        <div class="search-label">Carry Position</div>
+        <div class="select-wrap">
+          <select id="carryPos">
+            <option value="">All positions</option>
+            <option value="iwb">IWB — Inside Waistband</option>
+            <option value="aiwb">AIWB — Appendix Carry</option>
+            <option value="owb">OWB — Outside Waistband</option>
+            <option value="owb-paddle">OWB Paddle</option>
+            <option value="duty">Duty / Level II–III</option>
+            <option value="shoulder">Shoulder Rig</option>
+            <option value="chest">Chest Rig</option>
+            <option value="ankle">Ankle Holster</option>
+            <option value="sob">Small of Back</option>
+            <option value="crossdraw">Cross Draw</option>
+            <option value="offbody">Off-Body / Bag</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- OPTIC -->
+      <div class="filter-group">
+        <div class="search-label">Optic Cut</div>
+        <div class="select-wrap">
+          <select id="optic">
+            <option value="">No optic</option>
+            <option value="any-mos">Any Optic Cut / MOS</option>
+            <optgroup label="─── Holosun ───">
+              <option value="holosun-507c">Holosun 507C</option>
+              <option value="holosun-508t">Holosun 508T</option>
+              <option value="holosun-509t">Holosun 509T</option>
+              <option value="holosun-407c">Holosun 407C</option>
+              <option value="holosun-510c">Holosun 510C</option>
+            </optgroup>
+            <optgroup label="─── Trijicon ───">
+              <option value="trijicon-rmr">Trijicon RMR / RMR Type 2</option>
+              <option value="trijicon-sro">Trijicon SRO</option>
+              <option value="trijicon-rmrcc">Trijicon RMRcc</option>
+            </optgroup>
+            <optgroup label="─── Leupold ───">
+              <option value="leupold-deltapoint">Leupold DeltaPoint Pro</option>
+            </optgroup>
+            <optgroup label="─── Shield ───">
+              <option value="shield-sms">Shield SMS</option>
+              <option value="shield-rmsc">Shield RMSc</option>
+            </optgroup>
+            <optgroup label="─── Sig ───">
+              <option value="sig-romeo0">Sig Romeo Zero / Elite</option>
+              <option value="sig-romeo1">Sig Romeo1 Pro</option>
+            </optgroup>
+            <optgroup label="─── Vortex ───">
+              <option value="vortex-venom">Vortex Venom</option>
+              <option value="vortex-razor">Vortex Razor</option>
+            </optgroup>
+            <optgroup label="─── Other ───">
+              <option value="eotech-eflx">EOTech EFLX</option>
+              <option value="burris-fastfire">Burris FastFire</option>
+              <option value="crimson-trace">Crimson Trace CTS-1550</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- WEAPON LIGHT -->
+      <div class="filter-group">
+        <div class="search-label">Weapon Light</div>
+        <div class="select-wrap">
+          <select id="light">
+            <option value="">No light</option>
+            <option value="any">Any WML Compatible</option>
+
+            <optgroup label="─── Streamlight ───">
+              <option value="tlr-1">Streamlight TLR-1</option>
+              <option value="tlr-1-hl">Streamlight TLR-1 HL</option>
+              <option value="tlr-1s">Streamlight TLR-1s (strobe)</option>
+              <option value="tlr-2">Streamlight TLR-2 (light + laser)</option>
+              <option value="tlr-2-hl">Streamlight TLR-2 HL</option>
+              <option value="tlr-6">Streamlight TLR-6 (subcompact)</option>
+              <option value="tlr-7">Streamlight TLR-7 A</option>
+              <option value="tlr-7-sub">Streamlight TLR-7 Sub</option>
+              <option value="tlr-7x">Streamlight TLR-7X</option>
+              <option value="tlr-8">Streamlight TLR-8 A</option>
+              <option value="tlr-8g">Streamlight TLR-8 G (green laser)</option>
+              <option value="tlr-9">Streamlight TLR-9</option>
+              <option value="tlr-10">Streamlight TLR-10</option>
+              <option value="tlr-rm1">Streamlight TLR RM 1</option>
+              <option value="tlr-rm2">Streamlight TLR RM 2</option>
+            </optgroup>
+
+            <optgroup label="─── SureFire ───">
+              <option value="sf-x300u-a">SureFire X300U-A</option>
+              <option value="sf-x300u-b">SureFire X300U-B</option>
+              <option value="sf-x300t">SureFire X300T Turbo</option>
+              <option value="sf-x400u">SureFire X400U (light + laser)</option>
+              <option value="sf-xc1">SureFire XC-1</option>
+              <option value="sf-xc2">SureFire XC-2 (light + laser)</option>
+              <option value="sf-masterfire">SureFire Masterfire</option>
+            </optgroup>
+
+            <optgroup label="─── Olight ───">
+              <option value="olight-pl-mini2">Olight PL-Mini 2 Valkyrie</option>
+              <option value="olight-pl-pro">Olight PL-Pro Valkyrie</option>
+              <option value="olight-pl350">Olight PL350 Valkyrie</option>
+              <option value="olight-baldr-mini">Olight Baldr Mini</option>
+              <option value="olight-baldr-pro">Olight Baldr Pro</option>
+              <option value="olight-baldr-s">Olight Baldr S</option>
+              <option value="olight-baldr-rl-mini">Olight Baldr RL Mini</option>
+            </optgroup>
+
+            <optgroup label="─── Nightstick ───">
+              <option value="ns-twm-30">Nightstick TWM-30</option>
+              <option value="ns-twm-350">Nightstick TWM-350</option>
+              <option value="ns-twm-852">Nightstick TWM-852</option>
+              <option value="ns-twm-855xl">Nightstick TWM-855XL</option>
+              <option value="ns-twm-30t">Nightstick TWM-30T (light+laser)</option>
+            </optgroup>
+
+            <optgroup label="─── Inforce ───">
+              <option value="inforce-apl">Inforce APL</option>
+              <option value="inforce-aplc">Inforce APLc (compact)</option>
+              <option value="inforce-wild2">Inforce WML Gen 2</option>
+            </optgroup>
+
+            <optgroup label="─── Cloud Defensive ───">
+              <option value="cd-rein">Cloud Defensive REIN 2.0</option>
+              <option value="cd-rein-micro">Cloud Defensive REIN Micro</option>
+            </optgroup>
+
+            <optgroup label="─── Crimson Trace ───">
+              <option value="ct-rail-master">Crimson Trace Rail Master</option>
+              <option value="ct-lg-series">Crimson Trace LG-Series (laser)</option>
+              <option value="ct-cmr-207">Crimson Trace CMR-207</option>
+              <option value="ct-cmr-208">Crimson Trace CMR-208</option>
+            </optgroup>
+
+            <optgroup label="─── Viridian ───">
+              <option value="viridian-c5l">Viridian C5L</option>
+              <option value="viridian-e-series">Viridian E Series</option>
+              <option value="viridian-x5l">Viridian X5L</option>
+              <option value="viridian-reactor">Viridian Reactor 5</option>
+            </optgroup>
+
+            <optgroup label="─── Surefire / Laser ───">
+              <option value="insight-wl1">Insight WL1</option>
+              <option value="laser-max-uni">LaserMax Uni-Max</option>
+              <option value="laser-max-guide">LaserMax Guide Rod Laser</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+    </div>
+    <div class="search-actions">
+      <button class="btn-search" onclick="runSearch()">&#9654; Search Holsters</button>
+      <button class="btn-reset" onclick="resetSearch()">Reset Filters</button>
+    </div>
+  </div>
+
+  <div id="results-area">
+    <div class="results-header">
+      <div class="results-count">Showing <span id="result-count">15</span> holsters</div>
+      <div class="sort-group">
+        <label>Sort by</label>
+        <div style="position:relative;">
+          <select id="sortBy" onchange="sortResults()" style="padding-right:28px;">
+            <option value="relevance">Relevance</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="brand">Brand A–Z</option>
+          </select>
+          <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--accent);pointer-events:none;font-size:11px;">▾</span>
+        </div>
+      </div>
+    </div>
+    <div class="product-grid" id="productGrid"></div>
+  </div>
+</section>
+
+<section class="search-section" id="used-section" style="display:none;">
+  <div class="coming-soon-section">
+    <div class="coming-soon-icon">🔄</div>
+    <h2>Used Holster Market</h2>
+    <p>The peer-to-peer holster marketplace is coming soon. List your used holsters with the same make/model/carry filters — buyers find exactly what they need.</p>
+    <div class="notify-form">
+      <input type="email" placeholder="your@email.com" id="notifyEmail"/>
+      <button onclick="notifyMe()">Notify Me</button>
+    </div>
+    <p id="notify-confirm" style="color:var(--accent);margin-top:14px;display:none;font-size:14px;">✓ You're on the list!</p>
+  </div>
+</section>
+
+<footer>
+  <a href="#" class="logo"><span class="logo-dot"></span>REHOLSTERED</a>
+  <ul class="footer-links">
+    <li><a href="#">Privacy</a></li>
+    <li><a href="#">Terms</a></li>
+    <li><a href="#">Manufacturers</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+  <p class="footer-copy">&copy; 2025 Reholstered.com</p>
+</footer>
+
+<script>
+const PRODUCTS = [
+  {id:1,brand:'Vedder Holsters',name:'LightTuck IWB',price:69.99,carry:'iwb',optic:'any-mos',light:'tlr-7',gun:'glock-19',inStock:true,material:'kydex'},
+  {id:2,brand:'Alien Gear',name:'ShapeShift AIWB',price:89.95,carry:'aiwb',optic:'',light:'',gun:'glock-19',inStock:true,material:'hybrid'},
+  {id:3,brand:'Safariland',name:'6360 ALS/SLS Duty',price:159.00,carry:'duty',optic:'trijicon-rmr',light:'sf-x300u-a',gun:'glock-17',inStock:true,material:'safarilaminate'},
+  {id:4,brand:'Tier 1 Concealed',name:'Axis Elite AIWB',price:109.99,carry:'aiwb',optic:'holosun-507c',light:'tlr-7',gun:'sig-p365xl',inStock:true,material:'kydex'},
+  {id:5,brand:'PHLster',name:'Floodlight OWB',price:79.99,carry:'owb',optic:'trijicon-rmr',light:'sf-x300u-a',gun:'glock-17',inStock:false,material:'kydex'},
+  {id:6,brand:'Crossbreed',name:'SuperTuck Deluxe IWB',price:84.95,carry:'iwb',optic:'',light:'',gun:'sig-p320-compact',inStock:true,material:'hybrid'},
+  {id:7,brand:'Tulster',name:'Profile IWB AIWB',price:59.99,carry:'aiwb',optic:'holosun-507c',light:'',gun:'glock-43x',inStock:true,material:'kydex'},
+  {id:8,brand:'Blackhawk',name:'SERPA Level 2 OWB',price:49.99,carry:'owb',optic:'',light:'',gun:'sig-p320-full',inStock:true,material:'polymer'},
+  {id:9,brand:'Raven Concealment',name:'Vanguard 2 AIWB',price:44.99,carry:'aiwb',optic:'',light:'',gun:'glock-19',inStock:false,material:'kydex'},
+  {id:10,brand:'Crucial Concealment',name:'Covert IWB',price:52.99,carry:'iwb',optic:'shield-sms',light:'tlr-7',gun:'sw-mp9-shield',inStock:true,material:'kydex'},
+  {id:11,brand:'Galco',name:'Kingtuk Deluxe IWB',price:94.99,carry:'iwb',optic:'',light:'',gun:'glock-19',inStock:true,material:'hybrid'},
+  {id:12,brand:'We The People',name:'Appendix Carry AIWB',price:39.99,carry:'aiwb',optic:'any-mos',light:'',gun:'glock-43',inStock:true,material:'kydex'},
+  {id:13,brand:'Bravo Concealment',name:'Torsion IWB',price:54.99,carry:'iwb',optic:'holosun-509t',light:'tlr-1-hl',gun:'sig-p320-xcarry',inStock:true,material:'kydex'},
+  {id:14,brand:'DeSantis',name:'Speed Scabbard OWB',price:69.99,carry:'owb',optic:'',light:'',gun:'sig-p226',inStock:true,material:'leather'},
+  {id:15,brand:'Concealment Express',name:'IWB Kydex',price:34.99,carry:'iwb',optic:'trijicon-rmr',light:'',gun:'sw-mp2-compact',inStock:true,material:'kydex'},
+];
+
+let filtered=[...PRODUCTS];
+
+function runSearch(){
+  const gun=document.getElementById('gunModel').value;
+  const carry=document.getElementById('carryPos').value;
+  const optic=document.getElementById('optic').value;
+  const light=document.getElementById('light').value;
+  filtered=PRODUCTS.filter(p=>{
+    if(gun&&p.gun!==gun)return false;
+    if(carry&&p.carry!==carry)return false;
+    if(optic&&optic!==''&&p.optic!==optic&&p.optic!=='any-mos')return false;
+    if(light&&light!==''&&p.light!==light&&p.light!=='any')return false;
+    return true;
+  });
+  sortResults();
+}
+
+function sortResults(){
+  const sort=document.getElementById('sortBy').value;
+  if(sort==='price-low')filtered.sort((a,b)=>a.price-b.price);
+  else if(sort==='price-high')filtered.sort((a,b)=>b.price-a.price);
+  else if(sort==='brand')filtered.sort((a,b)=>a.brand.localeCompare(b.brand));
+  renderResults();
+}
+
+function resetSearch(){
+  document.getElementById('gunModel').value='';
+  document.getElementById('carryPos').value='';
+  document.getElementById('optic').value='';
+  document.getElementById('light').value='';
+  filtered=[...PRODUCTS];
+  renderResults();
+}
+
+const carryMap={iwb:'IWB',aiwb:'AIWB',owb:'OWB','owb-paddle':'OWB Paddle',duty:'Duty',shoulder:'Shoulder',chest:'Chest',ankle:'Ankle',sob:'Small of Back',crossdraw:'Cross Draw',offbody:'Off-Body'};
+
+function holsterSVG(){return`<svg style="width:56px;height:56px;opacity:0.4" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="44" rx="4" fill="currentColor" opacity="0.5"/><rect x="14" y="12" width="20" height="28" rx="2" fill="currentColor" opacity="0.3"/><rect x="38" y="18" width="8" height="3" rx="1" fill="currentColor" opacity="0.5"/><rect x="38" y="26" width="8" height="3" rx="1" fill="currentColor" opacity="0.5"/><circle cx="24" cy="46" r="3" fill="currentColor" opacity="0.4"/></svg>`;}
+
+function renderResults(){
+  const grid=document.getElementById('productGrid');
+  document.getElementById('result-count').textContent=filtered.length;
+  if(!filtered.length){
+    grid.innerHTML=`<div class="empty-state"><h3>No holsters found</h3><p>Try adjusting your filters — not every combination has a result yet.</p></div>`;
+    return;
+  }
+  grid.innerHTML=filtered.map(p=>{
+    const stockClass=p.inStock?'in-stock':'low-stock';
+    const pi=Math.floor(p.price);
+    const pc=('0'+Math.round((p.price%1)*100)).slice(-2);
+    const cl=carryMap[p.carry]||p.carry.toUpperCase();
+    return`<div class="product-card ${stockClass}">
+      <div class="product-img">
+        <div class="holster-placeholder" style="color:var(--text3)">${holsterSVG()}</div>
+        <div class="brand-badge">${p.brand}</div>
+      </div>
+      <div class="product-body">
+        <div class="product-brand">${p.brand}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-tags">
+          <span class="tag highlight">${cl}</span>
+          <span class="tag">${p.material.toUpperCase()}</span>
+          ${p.optic?`<span class="tag">Optic Ready</span>`:''}
+          ${p.light?`<span class="tag">WML Fit</span>`:''}
+        </div>
+        <div class="product-footer">
+          <div class="product-price">$${pi}<span class="cents">.${pc}</span></div>
+          <button class="btn-view" onclick="alert('Live site links to ${p.brand} product page.')">View →</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showTab(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('new-section').style.display=tab==='new'?'block':'none';
+  document.getElementById('used-section').style.display=tab==='used'?'block':'none';
+}
+
+function notifyMe(){
+  const e=document.getElementById('notifyEmail').value;
+  if(e&&e.includes('@')){document.getElementById('notify-confirm').style.display='block';document.getElementById('notifyEmail').value='';}
+}
+
+renderResults();
+</script>
+</body>
+</html>
