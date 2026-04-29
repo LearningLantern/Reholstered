@@ -732,11 +732,11 @@ async function querySupabase(filters, sortBy) {
   // Gun model filter — search name field for gun model keywords
   if (filters.gun) {
     const GUN_SEARCH_TERMS = {
-      'glock-19':    'Glock 19',
-      'glock-19x':   'Glock 19X',
-      'glock-17':    'Glock 17',
-      'glock-43x':   'Glock 43X',
-      'glock-43':    'Glock 43',
+      'glock-19':    'Glock 19 ',
+      'glock-19x':   '19X',
+      'glock-17':    'Glock 17 ',
+      'glock-43x':   '43X',
+      'glock-43':    'Glock 43 ',
       'glock-48':    'Glock 48',
       'glock-26':    'Glock 26',
       'glock-27':    'Glock 27',
@@ -752,7 +752,7 @@ async function querySupabase(filters, sortBy) {
       'glock-45':    'Glock 45',
       'sig-p365xl':       'P365XL',
       'sig-p365x':        'P365-X',
-      'sig-p365':         'P365',
+      'sig-p365':         'P365 ',
       'sig-p320-xcarry':  'P320 X-Carry',
       'sig-p320-compact': 'P320 Compact',
       'sig-p320-full':    'P320 Full',
@@ -803,7 +803,7 @@ async function querySupabase(filters, sortBy) {
 
     const searchTerm = GUN_SEARCH_TERMS[filters.gun];
     if (searchTerm) {
-      url += `&name=ilike.*${encodeURIComponent(searchTerm)}*`;
+      url += `&name=ilike.%25${encodeURIComponent(searchTerm)}%25`;
     }
   }
 
