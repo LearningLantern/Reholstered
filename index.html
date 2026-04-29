@@ -716,6 +716,13 @@ async function querySupabase(filters, sortBy) {
     }
   }
 
+  // Weapon light filter
+  if (filters.light && filters.light !== 'any') {
+    url += `&or=(light.eq.${encodeURIComponent(filters.light)},light.eq.any)`;
+  } else if (filters.light === 'any') {
+    url += `&light=not.is.null`;
+  }
+
   // Sort
   if (sortBy === 'price-low') url += '&order=price.asc.nullslast';
   else if (sortBy === 'price-high') url += '&order=price.desc.nullslast';
