@@ -665,115 +665,200 @@
 </footer>
 
 <script>
-const PRODUCTS = [
-  {id:1,brand:'Vedder Holsters',name:'LightTuck IWB',price:69.99,carry:'iwb',optic:'any-mos',light:'tlr-7',gun:'glock-19',inStock:true,material:'kydex',hand:'right'},
-  {id:2,brand:'Alien Gear',name:'ShapeShift AIWB',price:89.95,carry:'aiwb',optic:'',light:'',gun:'glock-19',inStock:true,material:'hybrid',hand:'ambi'},
-  {id:3,brand:'Safariland',name:'6360 ALS/SLS Duty',price:159.00,carry:'duty',optic:'trijicon-rmr',light:'sf-x300u-a',gun:'glock-17',inStock:true,material:'safarilaminate',hand:'right'},
-  {id:4,brand:'Tier 1 Concealed',name:'Axis Elite AIWB',price:109.99,carry:'aiwb',optic:'holosun-507c',light:'tlr-7',gun:'sig-p365xl',inStock:true,material:'kydex',hand:'right'},
-  {id:5,brand:'PHLster',name:'Floodlight OWB',price:79.99,carry:'owb',optic:'trijicon-rmr',light:'sf-x300u-a',gun:'glock-17',inStock:false,material:'kydex',hand:'ambi'},
-  {id:6,brand:'Crossbreed',name:'SuperTuck Deluxe IWB',price:84.95,carry:'iwb',optic:'',light:'',gun:'sig-p320-compact',inStock:true,material:'hybrid',hand:'right'},
-  {id:7,brand:'Tulster',name:'Profile IWB AIWB',price:59.99,carry:'aiwb',optic:'holosun-507c',light:'',gun:'glock-43x',inStock:true,material:'kydex',hand:'right'},
-  {id:8,brand:'Blackhawk',name:'SERPA Level 2 OWB',price:49.99,carry:'owb',optic:'',light:'',gun:'sig-p320-full',inStock:true,material:'polymer',hand:'right'},
-  {id:9,brand:'Raven Concealment',name:'Vanguard 2 AIWB',price:44.99,carry:'aiwb',optic:'',light:'',gun:'glock-19',inStock:false,material:'kydex',hand:'ambi'},
-  {id:10,brand:'Crucial Concealment',name:'Covert IWB',price:52.99,carry:'iwb',optic:'shield-sms',light:'tlr-7',gun:'sw-mp9-shield',inStock:true,material:'kydex',hand:'right'},
-  {id:11,brand:'Galco',name:'Kingtuk Deluxe IWB',price:94.99,carry:'iwb',optic:'',light:'',gun:'glock-19',inStock:true,material:'hybrid',hand:'right'},
-  {id:12,brand:'We The People',name:'Appendix Carry AIWB',price:39.99,carry:'aiwb',optic:'any-mos',light:'',gun:'glock-43',inStock:true,material:'kydex',hand:'right'},
-  {id:13,brand:'Bravo Concealment',name:'Torsion IWB',price:54.99,carry:'iwb',optic:'holosun-509t',light:'tlr-1-hl',gun:'sig-p320-xcarry',inStock:true,material:'kydex',hand:'right'},
-  {id:14,brand:'DeSantis',name:'Speed Scabbard OWB',price:69.99,carry:'owb',optic:'',light:'',gun:'sig-p226',inStock:true,material:'leather',hand:'right'},
-  {id:15,brand:'Concealment Express',name:'IWB Kydex',price:34.99,carry:'iwb',optic:'trijicon-rmr',light:'',gun:'sw-mp2-compact',inStock:true,material:'kydex',hand:'right'},
-];
+// ─── Supabase config ────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://crkjxsexcnjzlzwfxxfz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_BSPQUVs_kyvA1o7gaKYj3Q_CXrjs5w3';
+const PAGE_SIZE = 48;
 
-let filtered=[...PRODUCTS];
+// ─── State ───────────────────────────────────────────────────────────────────
+let currentResults = [];
+let totalCount = 0;
+let isLoading = false;
 
-function runSearch(){
-  const gun=document.getElementById('gunModel').value;
-  const carry=document.getElementById('carryPos').value;
-  const optic=document.getElementById('optic').value;
-  const light=document.getElementById('light').value;
-  const hand=document.getElementById('drawHand').value;
-  filtered=PRODUCTS.filter(p=>{
-    if(gun&&p.gun!==gun)return false;
-    if(carry&&p.carry!==carry)return false;
-    if(optic&&optic!==''&&p.optic!==optic&&p.optic!=='any-mos')return false;
-    if(light&&light!==''&&p.light!==light&&p.light!=='any')return false;
-    if(hand&&hand!==''&&p.hand!==hand&&p.hand!=='ambi')return false;
-    return true;
-  });
-  sortResults();
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const carryMap = {iwb:'IWB',aiwb:'AIWB',owb:'OWB','owb-paddle':'OWB Paddle',duty:'Duty',shoulder:'Shoulder',chest:'Chest',ankle:'Ankle',sob:'Small of Back',crossdraw:'Cross Draw',offbody:'Off-Body'};
+const handLabel = {right:'Right Hand',left:'Left Hand',ambi:'Ambidextrous'};
+
+function holsterSVG(){
+  return `<svg style="width:56px;height:56px;opacity:0.4" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="44" rx="4" fill="currentColor" opacity="0.5"/><rect x="14" y="12" width="20" height="28" rx="2" fill="currentColor" opacity="0.3"/><rect x="38" y="18" width="8" height="3" rx="1" fill="currentColor" opacity="0.5"/><rect x="38" y="26" width="8" height="3" rx="1" fill="currentColor" opacity="0.5"/><circle cx="24" cy="46" r="3" fill="currentColor" opacity="0.4"/></svg>`;
 }
 
-function sortResults(){
-  const sort=document.getElementById('sortBy').value;
-  if(sort==='price-low')filtered.sort((a,b)=>a.price-b.price);
-  else if(sort==='price-high')filtered.sort((a,b)=>b.price-a.price);
-  else if(sort==='brand')filtered.sort((a,b)=>a.brand.localeCompare(b.brand));
-  renderResults();
+function showLoading(){
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;">
+    <div style="display:inline-block;width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+    <p style="color:var(--text3);margin-top:16px;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;">Searching ${totalCount.toLocaleString()}+ holsters...</p>
+  </div>`;
+  document.getElementById('result-count').textContent = '...';
 }
 
-function resetSearch(){
-  document.getElementById('gunModel').value='';
-  document.getElementById('carryPos').value='';
-  document.getElementById('optic').value='';
-  document.getElementById('light').value='';
-  document.getElementById('drawHand').value='';
-  filtered=[...PRODUCTS];
-  renderResults();
+// ─── Supabase Query ───────────────────────────────────────────────────────────
+async function querySupabase(filters, sortBy) {
+  let url = `${SUPABASE_URL}/rest/v1/holsters?select=*&limit=${PAGE_SIZE}`;
+
+  // Carry type filter
+  if (filters.carry) {
+    url += `&carry_type=eq.${encodeURIComponent(filters.carry)}`;
+  }
+
+  // Draw hand filter
+  if (filters.hand) {
+    if (filters.hand === 'right' || filters.hand === 'left') {
+      url += `&or=(draw_hand.eq.${filters.hand},draw_hand.eq.ambi)`;
+    }
+  }
+
+  // Sort
+  if (sortBy === 'price-low') url += '&order=price.asc.nullslast';
+  else if (sortBy === 'price-high') url += '&order=price.desc.nullslast';
+  else if (sortBy === 'brand') url += '&order=brand.asc';
+  else url += '&order=brand.asc,name.asc';
+
+  // Name search for gun model (search in name field)
+  if (filters.gun) {
+    const gunLabel = document.getElementById('gunModel').options[document.getElementById('gunModel').selectedIndex].text;
+    const searchTerms = gunLabel.split(/[\s\/]+/).filter(t => t.length > 2).slice(0, 3);
+    if (searchTerms.length > 0) {
+      url += `&name=ilike.*${encodeURIComponent(searchTerms[0])}*`;
+    }
+  }
+
+  const headers = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Prefer': 'count=exact'
+  };
+
+  try {
+    const res = await fetch(url, { headers });
+    const count = parseInt(res.headers.get('Content-Range')?.split('/')[1] || '0');
+    const data = await res.json();
+    return { data: Array.isArray(data) ? data : [], count };
+  } catch(e) {
+    console.error('Supabase error:', e);
+    return { data: [], count: 0 };
+  }
 }
 
-const carryMap={iwb:'IWB',aiwb:'AIWB',owb:'OWB','owb-paddle':'OWB Paddle',duty:'Duty',shoulder:'Shoulder',chest:'Chest',ankle:'Ankle',sob:'Small of Back',crossdraw:'Cross Draw',offbody:'Off-Body'};
+// ─── Get total count on load ──────────────────────────────────────────────────
+async function loadTotalCount() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/holsters?select=id&limit=1`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Prefer': 'count=exact'
+      }
+    });
+    const count = parseInt(res.headers.get('Content-Range')?.split('/')[1] || '7264');
+    totalCount = count;
+    // Update stat bar
+    document.querySelectorAll('.stat-num')[1].textContent = count.toLocaleString() + '+';
+  } catch(e) {
+    totalCount = 7264;
+  }
+}
 
-function holsterSVG(){return`<svg style="width:56px;height:56px;opacity:0.4" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="44" rx="4" fill="currentColor" opacity="0.5"/><rect x="14" y="12" width="20" height="28" rx="2" fill="currentColor" opacity="0.3"/><rect x="38" y="18" width="8" height="3" rx="1" fill="currentColor" opacity="0.5"/><rect x="38" y="26" width="8" height="3" rx="1" fill="currentColor" opacity="0.5"/><circle cx="24" cy="46" r="3" fill="currentColor" opacity="0.4"/></svg>`;}
+// ─── Main search function ─────────────────────────────────────────────────────
+async function runSearch() {
+  if (isLoading) return;
+  isLoading = true;
 
-function renderResults(){
-  const grid=document.getElementById('productGrid');
-  document.getElementById('result-count').textContent=filtered.length;
-  if(!filtered.length){
-    grid.innerHTML=`<div class="empty-state"><h3>No holsters found</h3><p>Try adjusting your filters — not every combination has a result yet.</p></div>`;
+  const filters = {
+    gun: document.getElementById('gunModel').value,
+    carry: document.getElementById('carryPos').value,
+    optic: document.getElementById('optic').value,
+    light: document.getElementById('light').value,
+    hand: document.getElementById('drawHand').value,
+  };
+  const sortBy = document.getElementById('sortBy').value;
+
+  showLoading();
+
+  const { data, count } = await querySupabase(filters, sortBy);
+  currentResults = data;
+  isLoading = false;
+
+  renderResults(data, count);
+}
+
+function sortResults() {
+  runSearch();
+}
+
+function resetSearch() {
+  document.getElementById('gunModel').value = '';
+  document.getElementById('carryPos').value = '';
+  document.getElementById('optic').value = '';
+  document.getElementById('light').value = '';
+  document.getElementById('drawHand').value = '';
+  runSearch();
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderResults(products, count) {
+  const grid = document.getElementById('productGrid');
+  document.getElementById('result-count').textContent = count > PAGE_SIZE ? `${count.toLocaleString()} (showing ${PAGE_SIZE})` : products.length;
+
+  if (!products.length) {
+    grid.innerHTML = `<div class="empty-state"><h3>No holsters found</h3><p>Try adjusting your filters — not every combination has a result yet.</p></div>`;
     return;
   }
-  const handLabel={'right':'Right Hand','left':'Left Hand','ambi':'Ambidextrous'};
-  grid.innerHTML=filtered.map(p=>{
-    const stockClass=p.inStock?'in-stock':'low-stock';
-    const pi=Math.floor(p.price);
-    const pc=('0'+Math.round((p.price%1)*100)).slice(-2);
-    const cl=carryMap[p.carry]||p.carry.toUpperCase();
-    return`<div class="product-card ${stockClass}">
+
+  grid.innerHTML = products.map((p, i) => {
+    const price = p.price ? `$${Math.floor(p.price)}<span class="cents">.${('0'+Math.round((p.price%1)*100)).slice(-2)}</span>` : 'See Site';
+    const carry = carryMap[p.carry_type] || (p.carry_type || 'IWB').toUpperCase();
+    const hand = handLabel[p.draw_hand] || 'Right Hand';
+    const hasImg = p.image_url && p.image_url.startsWith('http');
+    const delay = `animation-delay:${i * 0.03}s`;
+
+    return `<div class="product-card in-stock" style="${delay}">
       <div class="product-img">
-        <div class="holster-placeholder" style="color:var(--text3)">${holsterSVG()}</div>
+        ${hasImg
+          ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : ''}
+        <div class="holster-placeholder" style="color:var(--text3);${hasImg?'display:none':''}">${holsterSVG()}</div>
         <div class="brand-badge">${p.brand}</div>
       </div>
       <div class="product-body">
         <div class="product-brand">${p.brand}</div>
         <div class="product-name">${p.name}</div>
         <div class="product-tags">
-          <span class="tag highlight">${cl}</span>
-          <span class="tag">${p.material.toUpperCase()}</span>
-          <span class="tag">${handLabel[p.hand]||p.hand}</span>
-          ${p.optic?`<span class="tag">Optic Ready</span>`:''}
-          ${p.light?`<span class="tag">WML Fit</span>`:''}
+          <span class="tag highlight">${carry}</span>
+          <span class="tag">${hand}</span>
         </div>
         <div class="product-footer">
-          <div class="product-price">$${pi}<span class="cents">.${pc}</span></div>
-          <button class="btn-view" onclick="alert('Live site links to ${p.brand} product page.')">View →</button>
+          <div class="product-price">${price}</div>
+          <a href="${p.product_url || '#'}" target="_blank" rel="noopener" class="btn-view">View →</a>
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
-function showTab(tab,el){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+function showTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('new-section').style.display=tab==='new'?'block':'none';
-  document.getElementById('used-section').style.display=tab==='used'?'block':'none';
+  document.getElementById('new-section').style.display = tab === 'new' ? 'block' : 'none';
+  document.getElementById('used-section').style.display = tab === 'used' ? 'block' : 'none';
 }
 
-function notifyMe(){
-  const e=document.getElementById('notifyEmail').value;
-  if(e&&e.includes('@')){document.getElementById('notify-confirm').style.display='block';document.getElementById('notifyEmail').value='';}
+function notifyMe() {
+  const e = document.getElementById('notifyEmail').value;
+  if (e && e.includes('@')) {
+    document.getElementById('notify-confirm').style.display = 'block';
+    document.getElementById('notifyEmail').value = '';
+  }
 }
 
-renderResults();
+// Add spin animation
+const style = document.createElement('style');
+style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+
+// Init
+loadTotalCount();
+runSearch();
 </script>
 </body>
 </html>
