@@ -729,12 +729,91 @@ async function querySupabase(filters, sortBy) {
   else if (sortBy === 'brand') url += '&order=brand.asc';
   else url += '&order=brand.asc,name.asc';
 
-  // Name search for gun model (search in name field)
+  // Gun model filter — uses gun_model column for precise matching
   if (filters.gun) {
-    const gunLabel = document.getElementById('gunModel').options[document.getElementById('gunModel').selectedIndex].text;
-    const searchTerms = gunLabel.split(/[\s\/]+/).filter(t => t.length > 2).slice(0, 3);
-    if (searchTerms.length > 0) {
-      url += `&name=ilike.*${encodeURIComponent(searchTerms[0])}*`;
+    // Map dropdown value to gun_model database values
+    // The gun_model column is populated by detect_gun_model() in the scraper
+    const GUN_MODEL_MAP = {
+      'glock-19':    'glock 19',
+      'glock-17':    'glock 17',
+      'glock-43':    'glock 43',
+      'glock-43x':   'glock 43x',
+      'glock-48':    'glock 48',
+      'glock-19x':   'glock 19x',
+      'glock-26':    'glock 26',
+      'glock-27':    'glock 27',
+      'glock-22':    'glock 22',
+      'glock-23':    'glock 23',
+      'glock-20':    'glock 20',
+      'glock-21':    'glock 21',
+      'glock-29':    'glock 29',
+      'glock-30':    'glock 30',
+      'glock-34':    'glock 34',
+      'glock-41':    'glock 41',
+      'glock-42':    'glock 42',
+      'glock-45':    'glock 45',
+      'sig-p365':    'sig p365',
+      'sig-p365xl':  'sig p365xl',
+      'sig-p365x':   'sig p365x macro',
+      'sig-p320-full':    'sig p320 full',
+      'sig-p320-compact': 'sig p320 compact',
+      'sig-p320-xcarry':  'sig p320 xcarry',
+      'sig-p320':    'sig p320',
+      'sig-p226':    'sig p226',
+      'sig-p229':    'sig p229',
+      'sig-p938':    'sig p938',
+      'sw-mp9-shield':      'sw mp shield',
+      'sw-mp9-shield-plus': 'sw mp shield plus',
+      'sw-mp9-shield-ez':   'sw mp shield ez',
+      'sw-mp2-full':        'sw mp 2.0',
+      'sw-mp2-compact':     'sw mp 2.0 compact',
+      'sw-equalizer':       'sw equalizer',
+      'sw-csx':             'sw csx',
+      'sa-hellcat':         'springfield hellcat',
+      'sa-hellcat-pro':     'springfield hellcat pro',
+      'sa-echelon':         'springfield echelon',
+      'sa-xdm-elite':       'springfield xdm elite',
+      'sa-xds-33':          'springfield xds',
+      'sa-xdm-38':          'springfield xdm',
+      'hk-vp9':    'hk vp9',
+      'hk-vp9sk':  'hk vp9sk',
+      'hk-p30':    'hk p30',
+      'hk-p30sk':  'hk p30sk',
+      'cz-p10c':   'cz p10c',
+      'cz-p10f':   'cz p10f',
+      'walther-pdp-full':    'walther pdp',
+      'walther-pdp-compact': 'walther pdp compact',
+      'walther-ppq-m2':      'walther ppq',
+      'walther-pps-m2':      'walther pps',
+      'ruger-max9':      'ruger max9',
+      'ruger-security9': 'ruger security9',
+      'ruger-lcp':       'ruger lcp',
+      'ruger-lcp2':      'ruger lcp2',
+      'ruger-lcp-max':   'ruger lcp max',
+      'taurus-g3c': 'taurus g3c',
+      'taurus-g3':  'taurus g3',
+      'taurus-gx4': 'taurus gx4',
+      'taurus-g2c': 'taurus g2c',
+      'canik-tp9sf': 'canik tp9sf',
+      'fn-509c':     'fn 509 compact',
+      'fn-509t':     'fn 509 tactical',
+      'fn-509':      'fn 509',
+      'kimber-micro9': 'kimber micro9',
+      'beretta-92fs':  'beretta 92fs',
+      'beretta-apx':   'beretta apx',
+      '1911-5':  '1911 5 inch',
+      '1911-4':  '1911 4 inch',
+      '1911-3':  '1911 3 inch',
+    };
+
+    const dbModel = GUN_MODEL_MAP[filters.gun];
+    if (dbModel) {
+      url += `&gun_model=eq.${encodeURIComponent(dbModel)}`;
+    } else {
+      // Fallback: search name field
+      const sel = document.getElementById('gunModel');
+      const label = sel.options[sel.selectedIndex].text.replace(/\s*\(.*?\)/g, '').trim();
+      url += `&name=ilike.*${encodeURIComponent(label)}*`;
     }
   }
 
