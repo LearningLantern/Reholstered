@@ -260,7 +260,7 @@ def scrape_shopify(brand_name, base_url, delay=1.5):
     while True:
         url = f"{base_url}/products.json?limit=250&page={page}"
         try:
-            r = requests.get(url, headers=HEADERS, timeout=15)
+            r = requests.get(url, headers=HEADERS, timeout=8)
             if r.status_code != 200:
                 break
             data = r.json()
@@ -335,7 +335,7 @@ def scrape_safariland():
     ]
     for path in urls:
         try:
-            r = requests.get(base + path, headers=HEADERS, timeout=15)
+            r = requests.get(base + path, headers=HEADERS, timeout=8)
             soup = BeautifulSoup(r.text, "html.parser")
             cards = soup.select(".product-card, .product-tile, [data-product-id]")
             for card in cards:
@@ -374,7 +374,7 @@ def scrape_blackhawk():
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.blackhawk.com"
     try:
-        r = requests.get(f"{base}/holsters", headers=HEADERS, timeout=15)
+        r = requests.get(f"{base}/holsters", headers=HEADERS, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         cards = soup.select(".product-card, .product-item, [class*='product']")
         for card in cards:
@@ -417,7 +417,7 @@ def scrape_galco():
                   "/product-listing/shoulder-holsters/", "/product-listing/ankle-holsters/"]
     for cat in categories:
         try:
-            r = requests.get(base + cat, headers=HEADERS, timeout=15)
+            r = requests.get(base + cat, headers=HEADERS, timeout=8)
             soup = BeautifulSoup(r.text, "html.parser")
             cards = soup.select(".productItem, .product-item, [class*='product']")
             for card in cards:
@@ -456,7 +456,7 @@ def scrape_desantis():
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.desantisholster.com"
     try:
-        r = requests.get(f"{base}/all-holsters/", headers=HEADERS, timeout=15)
+        r = requests.get(f"{base}/all-holsters/", headers=HEADERS, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         cards = soup.select(".product, .woocommerce-LoopProduct, [class*='product-']")
         for card in cards:
@@ -490,7 +490,7 @@ def scrape_comptac():
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.comp-tac.com"
     try:
-        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
+        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         cards = soup.select(".product, [class*='product-item']")
         for card in cards:
@@ -524,7 +524,7 @@ def scrape_blade_tech():
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.blade-tech.com"
     try:
-        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
+        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         cards = soup.select(".product-item, .product, [class*='product']")
         for card in cards:
@@ -560,7 +560,7 @@ def scrape_gcode():
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.tacticalholsters.com"
     try:
-        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
+        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         cards = soup.select(".product-item, .product, [class*='product']")
         for card in cards:
@@ -596,7 +596,7 @@ def scrape_fobus():
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.fobusholster.com"
     try:
-        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
+        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         cards = soup.select(".product, .woocommerce-LoopProduct, [class*='product']")
         for card in cards:
@@ -630,7 +630,7 @@ def scrape_miltsparks():
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.miltsparks.com"
     try:
-        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
+        r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         cards = soup.select(".product, .entry, [class*='product']")
         for card in cards:
@@ -664,7 +664,7 @@ def scrape_don_hume():
     print(f"  Scraping {brand}...", flush=True)
     base = "https://donhume.com"
     try:
-        r = requests.get(f"{base}/product-category/holsters/", headers=HEADERS, timeout=15)
+        r = requests.get(f"{base}/product-category/holsters/", headers=HEADERS, timeout=8)
         soup = BeautifulSoup(r.text, "html.parser")
         cards = soup.select(".product, .woocommerce-LoopProduct, [class*=\'product\']")
         for card in cards:
