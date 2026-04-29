@@ -25,6 +25,114 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
+
+# ─── Gun model detection map ────────────────────────────────────────────────
+GUN_MODELS = {
+    # Glock — order matters, check specific models before generic
+    "glock 43x": ["glock 43x", "g43x", "43x mos"],
+    "glock 43":  [" glock 43 ", " g43 "],
+    "glock 48":  ["glock 48", " g48 "],
+    "glock 19x": ["glock 19x", "g19x"],
+    "glock 19":  [" glock 19 ", " g19 ", "glock 19,", "glock 19/"],
+    "glock 17":  [" glock 17 ", " g17 ", "glock 17,", "glock 17/"],
+    "glock 26":  ["glock 26", " g26 "],
+    "glock 27":  ["glock 27", " g27 "],
+    "glock 22":  ["glock 22", " g22 "],
+    "glock 23":  ["glock 23", " g23 "],
+    "glock 20":  ["glock 20", " g20 "],
+    "glock 21":  ["glock 21", " g21 "],
+    "glock 29":  ["glock 29", " g29 "],
+    "glock 30":  ["glock 30", " g30 "],
+    "glock 34":  ["glock 34", " g34 "],
+    "glock 41":  ["glock 41", " g41 "],
+    "glock 42":  ["glock 42", " g42 "],
+    "glock 45":  ["glock 45", " g45 "],
+    # Sig Sauer
+    "sig p365xl":      ["p365xl", "p365 xl", "p365-xl"],
+    "sig p365x macro": ["p365x macro", "p365-x macro"],
+    "sig p365":        [" p365 ", "p365,", "p365/"],
+    "sig p320 xcarry": ["p320 x-carry", "p320 xcarry", "x-carry"],
+    "sig p320 compact":["p320 compact", " p320c "],
+    "sig p320 full":   ["p320 full", "p320 fs"],
+    "sig p320":        [" p320 "],
+    "sig p226":        [" p226 ", "p226,"],
+    "sig p229":        [" p229 "],
+    "sig p938":        [" p938 "],
+    # Smith & Wesson
+    "sw mp shield plus":["m&p shield plus", "shield plus", "mp shield plus"],
+    "sw mp shield ez":  ["shield ez", "m&p ez"],
+    "sw mp shield":     ["m&p shield ", "mp shield ", " shield "],
+    "sw mp 2.0 compact":["m&p 2.0 compact", "m2.0 compact", "mp 2.0 compact", "m&p m2.0 compact"],
+    "sw mp 2.0":        ["m&p 2.0", "m&p m2.0", "mp 2.0"],
+    "sw equalizer":     ["equalizer"],
+    "sw csx":           [" csx "],
+    # Springfield
+    "springfield hellcat pro":["hellcat pro"],
+    "springfield hellcat rdp": ["hellcat rdp"],
+    "springfield hellcat":     [" hellcat "],
+    "springfield echelon":     [" echelon "],
+    "springfield xdm elite":   ["xd-m elite", "xdm elite"],
+    "springfield xds":         [" xd-s ", " xds "],
+    "springfield xdm":         [" xd-m ", " xdm "],
+    "springfield xd":          [" xd-9 ", " xd-40 ", " xd "],
+    # H&K
+    "hk vp9sk": ["vp9sk"],
+    "hk vp9":   [" vp9 ", " vp9,"],
+    "hk p30sk": ["p30sk"],
+    "hk p30l":  [" p30l "],
+    "hk p30":   [" p30 ", " p30,"],
+    "hk usp compact": ["usp compact"],
+    "hk usp":   [" usp "],
+    # CZ
+    "cz p10c": ["p-10 c", " p10c", "p-10c"],
+    "cz p10f": ["p-10 f", " p10f", "p-10f"],
+    "cz p10s": ["p-10 s", " p10s"],
+    "cz p07":  [" p-07 ", " p07 "],
+    "cz p09":  [" p-09 ", " p09 "],
+    # Walther
+    "walther pdp compact": ["pdp compact"],
+    "walther pdp":  [" pdp full", " pdp "],
+    "walther ppq":  [" ppq "],
+    "walther pps":  [" pps "],
+    # Ruger
+    "ruger max9":     ["max-9", " max9"],
+    "ruger security9":["security-9", "security9"],
+    "ruger lcp max":  ["lcp max"],
+    "ruger lcp2":     ["lcp ii", " lcp2"],
+    "ruger lcp":      [" lcp "],
+    # Taurus
+    "taurus g3c": [" g3c "],
+    "taurus g3":  ["taurus g3 "],
+    "taurus gx4": [" gx4 "],
+    "taurus g2c": [" g2c "],
+    # Canik
+    "canik tp9sf": ["tp9sf", "tp9 sf"],
+    "canik mete":  ["mete sf", "mete sft", "mete sfx"],
+    # FN
+    "fn 509 compact": ["509 compact", "509c "],
+    "fn 509 tactical":["509 tactical"],
+    "fn 509":  [" fn509 ", " 509 "],
+    # Kimber
+    "kimber micro9": ["micro 9", "micro9"],
+    # Beretta
+    "beretta 92fs": ["92fs", "92 fs"],
+    "beretta apx":  [" apx "],
+    "beretta px4":  [" px4 "],
+    # 1911
+    "1911 5 inch": ["1911 5"", "1911 5 inch", "1911 government"],
+    "1911 4 inch": ["1911 4"", "1911 4 inch", "1911 commander"],
+    "1911 3 inch": ["1911 3"", "1911 3 inch", "1911 officer"],
+    "1911":        [" 1911 "],
+}
+
+def detect_gun_model(text):
+    """Detect specific gun model from product text."""
+    text = " " + text.lower() + " "
+    for model, keywords in GUN_MODELS.items():
+        if any(k in text for k in keywords):
+            return model
+    return None
+
 # ─── Carry type keyword mapping ─────────────────────────────────────────────
 CARRY_KEYWORDS = {
     "aiwb": ["aiwb", "appendix"],
@@ -195,6 +303,7 @@ def scrape_shopify(brand_name, base_url, delay=1.5):
                     "carry_type": detect_carry(combined_text),
                     "draw_hand": detect_hand(combined_text),
                     "light": detect_light(combined_text),
+                    "gun_model": detect_gun_model(combined_text),
                     "source": "shopify",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
@@ -248,6 +357,7 @@ def scrape_safariland():
                     "carry_type": detect_carry(name),
                     "draw_hand": detect_hand(name),
                     "light": detect_light(name),
+                    "gun_model": detect_gun_model(name),
                     "source": "custom",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
