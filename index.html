@@ -74,7 +74,7 @@
   .product-card:hover{border-color:rgba(200,151,58,0.4);transform:translateY(-2px);}
   .product-card.in-stock::after{content:'IN STOCK';position:absolute;top:12px;right:12px;background:rgba(39,174,96,0.15);border:1px solid rgba(39,174,96,0.4);color:#4ade80;font-size:9px;font-weight:700;letter-spacing:0.12em;padding:3px 8px;}
   .product-card.low-stock::after{content:'LOW STOCK';position:absolute;top:12px;right:12px;background:rgba(200,151,58,0.12);border:1px solid rgba(200,151,58,0.35);color:var(--accent2);font-size:9px;font-weight:700;letter-spacing:0.12em;padding:3px 8px;}
-  .product-img{width:100%;height:160px;background:var(--bg3);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);overflow:hidden;position:relative;}
+  .product-img{width:100%;height:200px;background:var(--bg3);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);overflow:hidden;position:relative;} .product-img img{width:100%;height:100%;object-fit:contain;padding:8px;background:var(--bg3);}
   .holster-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text3);}
   .holster-icon{width:56px;height:56px;opacity:0.4;}
   .brand-badge{position:absolute;bottom:8px;left:8px;background:rgba(10,11,13,0.85);border:1px solid var(--border2);color:var(--text2);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;}
@@ -637,6 +637,11 @@
       </div>
     </div>
     <div class="product-grid" id="productGrid"></div>
+    <div id="pagination" style="display:flex;justify-content:center;align-items:center;gap:16px;padding:32px 0;margin-top:8px;">
+      <button id="prevBtn" onclick="changePage(-1)" class="btn-reset" style="padding:12px 24px;font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;" disabled>← Previous</button>
+      <span id="pageInfo" style="color:var(--text2);font-size:13px;letter-spacing:0.08em;text-transform:uppercase;">Page 1</span>
+      <button id="nextBtn" onclick="changePage(1)" class="btn-reset" style="padding:12px 24px;font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Next →</button>
+    </div>
   </div>
 </section>
 
@@ -674,6 +679,8 @@ const PAGE_SIZE = 48;
 let currentResults = [];
 let totalCount = 0;
 let isLoading = false;
+let currentPage = 1;
+let totalPages = 1;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const carryMap = {iwb:'IWB',aiwb:'AIWB',owb:'OWB','owb-paddle':'OWB Paddle',duty:'Duty',shoulder:'Shoulder',chest:'Chest',ankle:'Ankle',sob:'Small of Back',crossdraw:'Cross Draw',offbody:'Off-Body'};
@@ -694,7 +701,8 @@ function showLoading(){
 
 // ─── Supabase Query ───────────────────────────────────────────────────────────
 async function querySupabase(filters, sortBy) {
-  let url = `${SUPABASE_URL}/rest/v1/holsters?select=*&limit=${PAGE_SIZE}`;
+  const offset = (currentPage - 1) * PAGE_SIZE;
+  let url = `${SUPABASE_URL}/rest/v1/holsters?select=*&limit=${PAGE_SIZE}&offset=${offset}`;
 
   // Carry type filter
   if (filters.carry) {
@@ -760,9 +768,10 @@ async function loadTotalCount() {
 }
 
 // ─── Main search function ─────────────────────────────────────────────────────
-async function runSearch() {
+async function runSearch(resetPage=true) {
   if (isLoading) return;
   isLoading = true;
+  if (resetPage) currentPage = 1;
 
   const filters = {
     gun: document.getElementById('gunModel').value,
@@ -798,7 +807,12 @@ function resetSearch() {
 // ─── Render ───────────────────────────────────────────────────────────────────
 function renderResults(products, count) {
   const grid = document.getElementById('productGrid');
-  document.getElementById('result-count').textContent = count > PAGE_SIZE ? `${count.toLocaleString()} (showing ${PAGE_SIZE})` : products.length;
+  totalPages = Math.ceil(count / PAGE_SIZE);
+  document.getElementById('result-count').textContent = count > PAGE_SIZE ? `${count.toLocaleString()} (showing ${PAGE_SIZE} per page)` : products.length;
+  document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+  document.getElementById('prevBtn').disabled = currentPage <= 1;
+  document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+  document.getElementById('pagination').style.display = count > PAGE_SIZE ? 'flex' : 'none';
 
   if (!products.length) {
     grid.innerHTML = `<div class="empty-state"><h3>No holsters found</h3><p>Try adjusting your filters — not every combination has a result yet.</p></div>`;
@@ -834,6 +848,12 @@ function renderResults(products, count) {
       </div>
     </div>`;
   }).join('');
+}
+
+function changePage(dir) {
+  currentPage += dir;
+  runSearch(false);
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function showTab(tab, el) {
