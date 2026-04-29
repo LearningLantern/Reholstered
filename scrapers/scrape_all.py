@@ -28,27 +28,75 @@ HEADERS = {
 # ─── Carry type keyword mapping ─────────────────────────────────────────────
 CARRY_KEYWORDS = {
     "aiwb": ["aiwb", "appendix"],
-    "iwb": ["iwb", "inside waistband", "inside the waistband"],
-    "owb": ["owb", "outside waistband", "outside the waistband", "paddle"],
-    "duty": ["duty", "level ii", "level iii", "retention"],
+    "iwb": ["iwb", "inside waistband", "inside the waistband", "tuckable", "tuck"],
+    "owb": ["owb", "outside waistband", "outside the waistband", "paddle", "belt slide", "pancake"],
+    "duty": ["duty", "level ii", "level iii", "retention", "als", "sls"],
     "shoulder": ["shoulder"],
     "ankle": ["ankle"],
     "chest": ["chest rig", "chest holster"],
-    "offbody": ["off-body", "off body", "bag", "purse carry"],
+    "offbody": ["off-body", "off body", "purse carry"],
+}
+
+# ─── Weapon light keyword mapping ────────────────────────────────────────────
+LIGHT_KEYWORDS = {
+    # Streamlight TLR series
+    "tlr-1":    ["tlr-1 hl", "tlr1 hl", "tlr-1hl", "tlr1hl", "tlr 1 hl", "tlr-1s", "tlr1s", " tlr-1 ", " tlr1 ", "tlr 1 "],
+    "tlr-7":    ["tlr-7a", "tlr7a", "tlr-7 a", "tlr 7a", " tlr-7 ", " tlr7 ", "tlr 7 "],
+    "tlr-7-sub":["tlr-7 sub", "tlr7 sub", "tlr-7sub"],
+    "tlr-8":    ["tlr-8a", "tlr8a", "tlr-8 a", "tlr 8a", " tlr-8 ", " tlr8 ", "tlr 8 "],
+    "tlr-9":    [" tlr-9 ", " tlr9 ", "tlr 9 "],
+    "tlr-10":   [" tlr-10", " tlr10", "tlr 10"],
+    # SureFire
+    "sf-x300u-a":["x300u-a", "x300u a", "x300ua"],
+    "sf-x300u-b":["x300u-b", "x300u b", "x300ub"],
+    "sf-x300":  [" x300 ", "x300u"],
+    "sf-xc1":   [" xc1 ", "xc-1"],
+    "sf-xc2":   [" xc2 ", "xc-2"],
+    # Olight
+    "olight-pl-mini2": ["pl-mini 2", "pl mini 2", "pl-mini2", "valkyrie mini"],
+    "olight-pl-pro":   ["pl-pro", "pl pro", "valkyrie pro"],
+    "olight-baldr-mini":["baldr mini", "baldrmini"],
+    "olight-baldr-pro": ["baldr pro", "baldrpro"],
+    "olight-baldr-s":   ["baldr s ","baldr-s"],
+    # Nightstick
+    "ns-twm-30": ["twm-30", "twm30"],
+    "ns-twm-852":["twm-852", "twm852"],
+    # Inforce
+    "inforce-apl":["inforce apl", " apl ", "aplc"],
+    # Cloud Defensive
+    "cd-rein":  ["rein micro", "rein 2", "cd rein"],
+    # Crimson Trace
+    "ct-rail-master":["rail master", "cmr-207", "cmr207", "cmr-208", "cmr208"],
+    # Generic
+    "any":      ["weapon light", "wml", "light bearing", "w/ light", "with light", "w/light",
+                 "light-bearing", "streamlight", "surefire", "olight"],
 }
 
 def detect_carry(text):
     text = text.lower()
+    # Check AIWB first (more specific than IWB)
+    if any(k in text for k in CARRY_KEYWORDS["aiwb"]):
+        return "aiwb"
     for carry, keywords in CARRY_KEYWORDS.items():
+        if carry == "aiwb":
+            continue
         if any(k in text for k in keywords):
             return carry
     return "iwb"  # default
 
 def detect_hand(text):
     text = text.lower()
-    if "left" in text: return "left"
+    if "left hand" in text or "left-hand" in text or "lh " in text: return "left"
     if "ambi" in text: return "ambi"
     return "right"  # default
+
+def detect_light(text):
+    """Detect weapon light compatibility from product text."""
+    text = " " + text.lower() + " "
+    for light_key, keywords in LIGHT_KEYWORDS.items():
+        if any(k in text for k in keywords):
+            return light_key
+    return None  # no light detected
 
 def clean_price(price_str):
     if not price_str:
@@ -146,6 +194,7 @@ def scrape_shopify(brand_name, base_url, delay=1.5):
                     "product_url": f"{base_url}/products/{handle}",
                     "carry_type": detect_carry(combined_text),
                     "draw_hand": detect_hand(combined_text),
+                    "light": detect_light(combined_text),
                     "source": "shopify",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
@@ -198,6 +247,7 @@ def scrape_safariland():
                     "image_url": image, "product_url": link,
                     "carry_type": detect_carry(name),
                     "draw_hand": detect_hand(name),
+                    "light": detect_light(name),
                     "source": "custom",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
