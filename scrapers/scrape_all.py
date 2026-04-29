@@ -6,11 +6,15 @@ Run: python scrapers/scrape_all.py
 
 import os
 import re
+import sys
 import json
 import time
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+
+# Force unbuffered output so GitHub Actions shows logs in real time
+print("Starting Reholstered scraper...", flush=True)
 
 # ─── Supabase config (set in GitHub Secrets) ───────────────────────────────
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
@@ -58,7 +62,7 @@ def save_to_supabase(products):
         print("⚠️  No Supabase credentials — saving to local JSON instead")
         with open("data/products.json", "w") as f:
             json.dump(products, f, indent=2)
-        print(f"✅ Saved {len(products)} products to data/products.json")
+        print(f"✅ Saved {len(products)} products to data/products.json", flush=True)
         return
 
     url = f"{SUPABASE_URL}/rest/v1/holsters"
@@ -78,9 +82,9 @@ def save_to_supabase(products):
         if r.status_code in (200, 201):
             total_saved += len(batch)
         else:
-            print(f"❌ Supabase error: {r.status_code} — {r.text[:200]}")
+            print(f"❌ Supabase error: {r.status_code} — {r.text[:200]}", flush=True)
 
-    print(f"✅ Saved {total_saved}/{len(products)} products to Supabase")
+    print(f"✅ Saved {total_saved}/{len(products)} products to Supabase", flush=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -95,7 +99,7 @@ def scrape_shopify(brand_name, base_url, delay=1.5):
     """
     products = []
     page = 1
-    print(f"  Scraping {brand_name} (Shopify)...")
+    print(f"  Scraping {brand_name} (Shopify)...", flush=True)
 
     while True:
         url = f"{base_url}/products.json?limit=250&page={page}"
@@ -150,10 +154,10 @@ def scrape_shopify(brand_name, base_url, delay=1.5):
             time.sleep(delay)
 
         except Exception as e:
-            print(f"    ❌ Error on page {page}: {e}")
+            print(f"    ❌ Error on page {page}: {e}", flush=True)
             break
 
-    print(f"    ✅ {brand_name}: {len(products)} holsters found")
+    print(f"    ✅ {brand_name}: {len(products)} holsters found", flush=True)
     return products
 
 
@@ -164,7 +168,7 @@ def scrape_shopify(brand_name, base_url, delay=1.5):
 def scrape_safariland():
     brand = "Safariland"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.safariland.com"
     urls = [
         "/products/holsters/duty-holsters/",
@@ -197,17 +201,17 @@ def scrape_safariland():
                     "source": "custom",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
-            time.sleep(1.5)
+            time.sleep(0.5)
         except Exception as e:
-            print(f"    ❌ {path}: {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+            print(f"    ❌ {path}: {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_blackhawk():
     brand = "Blackhawk"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.blackhawk.com"
     try:
         r = requests.get(f"{base}/holsters", headers=HEADERS, timeout=15)
@@ -239,15 +243,15 @@ def scrape_blackhawk():
                 "last_scraped": datetime.utcnow().isoformat(),
             })
     except Exception as e:
-        print(f"    ❌ {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+        print(f"    ❌ {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_galco():
     brand = "Galco"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.galcogunleather.com"
     categories = ["/product-listing/iwb-holsters/", "/product-listing/owb-holsters/",
                   "/product-listing/shoulder-holsters/", "/product-listing/ankle-holsters/"]
@@ -279,17 +283,17 @@ def scrape_galco():
                     "source": "custom",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
-            time.sleep(1.5)
+            time.sleep(0.5)
         except Exception as e:
-            print(f"    ❌ {cat}: {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+            print(f"    ❌ {cat}: {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_desantis():
     brand = "DeSantis"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.desantisholster.com"
     try:
         r = requests.get(f"{base}/all-holsters/", headers=HEADERS, timeout=15)
@@ -315,15 +319,15 @@ def scrape_desantis():
                 "last_scraped": datetime.utcnow().isoformat(),
             })
     except Exception as e:
-        print(f"    ❌ {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+        print(f"    ❌ {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_comptac():
     brand = "Comp-Tac"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.comp-tac.com"
     try:
         r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
@@ -349,15 +353,15 @@ def scrape_comptac():
                 "last_scraped": datetime.utcnow().isoformat(),
             })
     except Exception as e:
-        print(f"    ❌ {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+        print(f"    ❌ {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_blade_tech():
     brand = "Blade-Tech"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.blade-tech.com"
     try:
         r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
@@ -385,15 +389,15 @@ def scrape_blade_tech():
                 "last_scraped": datetime.utcnow().isoformat(),
             })
     except Exception as e:
-        print(f"    ❌ {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+        print(f"    ❌ {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_gcode():
     brand = "G-Code Holsters"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.tacticalholsters.com"
     try:
         r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
@@ -421,15 +425,15 @@ def scrape_gcode():
                 "last_scraped": datetime.utcnow().isoformat(),
             })
     except Exception as e:
-        print(f"    ❌ {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+        print(f"    ❌ {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_fobus():
     brand = "Fobus"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.fobusholster.com"
     try:
         r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
@@ -455,15 +459,15 @@ def scrape_fobus():
                 "last_scraped": datetime.utcnow().isoformat(),
             })
     except Exception as e:
-        print(f"    ❌ {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+        print(f"    ❌ {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_miltsparks():
     brand = "Milt Sparks"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.miltsparks.com"
     try:
         r = requests.get(f"{base}/holsters/", headers=HEADERS, timeout=15)
@@ -489,15 +493,15 @@ def scrape_miltsparks():
                 "last_scraped": datetime.utcnow().isoformat(),
             })
     except Exception as e:
-        print(f"    ❌ {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+        print(f"    ❌ {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
 def scrape_don_hume():
     brand = "Don Hume"
     products = []
-    print(f"  Scraping {brand}...")
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://donhume.com"
     try:
         r = requests.get(f"{base}/product-category/holsters/", headers=HEADERS, timeout=15)
@@ -523,8 +527,8 @@ def scrape_don_hume():
                 "last_scraped": datetime.utcnow().isoformat(),
             })
     except Exception as e:
-        print(f"    ❌ {e}")
-    print(f"    ✅ {brand}: {len(products)} holsters found")
+        print(f"    ❌ {e}", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
@@ -661,9 +665,9 @@ def main():
     all_products = []
     errors = []
 
-    print(f"\n{'='*60}")
-    print(f"  REHOLSTERED SCRAPER — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
-    print(f"{'='*60}\n")
+    print(f"\n{'='*60}", flush=True)
+    print(f"  REHOLSTERED SCRAPER — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", flush=True)
+    print(f"{'='*60}\n", flush=True)
 
     # Shopify brands
     print("── SHOPIFY BRANDS ──────────────────────────────────────")
@@ -673,8 +677,8 @@ def main():
             all_products.extend(products)
         except Exception as e:
             errors.append(f"{brand_name}: {e}")
-            print(f"    ❌ FAILED: {e}")
-        time.sleep(2)
+            print(f"    ❌ FAILED: {e}", flush=True)
+        time.sleep(0.5)
 
     # Custom scrapers
     print("\n── CUSTOM SCRAPERS ─────────────────────────────────────")
@@ -684,17 +688,17 @@ def main():
             all_products.extend(products)
         except Exception as e:
             errors.append(f"{scraper_fn.__name__}: {e}")
-            print(f"    ❌ FAILED: {e}")
-        time.sleep(2)
+            print(f"    ❌ FAILED: {e}", flush=True)
+        time.sleep(0.5)
 
     # Summary
-    print(f"\n{'='*60}")
-    print(f"  TOTAL: {len(all_products)} holsters scraped")
+    print(f"\n{'='*60}", flush=True)
+    print(f"  TOTAL: {len(all_products)} holsters scraped", flush=True)
     if errors:
-        print(f"  ERRORS ({len(errors)}):")
+        print(f"  ERRORS ({len(errors)}):", flush=True)
         for err in errors:
-            print(f"    • {err}")
-    print(f"{'='*60}\n")
+            print(f"    • {err}", flush=True)
+    print(f"{'='*60}\n", flush=True)
 
     # Save
     os.makedirs("data", exist_ok=True)
