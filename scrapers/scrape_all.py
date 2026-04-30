@@ -119,9 +119,9 @@ GUN_MODELS = {
     "beretta apx":  [" apx "],
     "beretta px4":  [" px4 "],
     # 1911
-    "1911 5 inch": ["1911 5"", "1911 5 inch", "1911 government"],
-    "1911 4 inch": ["1911 4"", "1911 4 inch", "1911 commander"],
-    "1911 3 inch": ["1911 3"", "1911 3 inch", "1911 officer"],
+    "1911 5 inch": ["1911 5 inch", "1911 government", "1911 5in"],
+    "1911 4 inch": ["1911 4 inch", "1911 commander", "1911 4in"],
+    "1911 3 inch": ["1911 3 inch", "1911 officer", "1911 3in"],
     "1911":        [" 1911 "],
 }
 
