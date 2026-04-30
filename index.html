@@ -517,84 +517,24 @@
         <div class="search-label">Weapon Light</div>
         <div class="select-wrap">
           <select id="light">
-            <option value="">No light</option>
-            <option value="any">Any WML Compatible</option>
-
+            <option value="">Any / No preference</option>
+            <option value="any">Any Light Compatible</option>
             <optgroup label="─── Streamlight ───">
-              <option value="tlr-1">Streamlight TLR-1</option>
-              <option value="tlr-1-hl">Streamlight TLR-1 HL</option>
-              <option value="tlr-1s">Streamlight TLR-1s (strobe)</option>
-              <option value="tlr-2">Streamlight TLR-2 (light + laser)</option>
-              <option value="tlr-2-hl">Streamlight TLR-2 HL</option>
-              <option value="tlr-6">Streamlight TLR-6 (subcompact)</option>
+              <option value="tlr-1">Streamlight TLR-1 / TLR-1 HL</option>
               <option value="tlr-7">Streamlight TLR-7 A</option>
-              <option value="tlr-7-sub">Streamlight TLR-7 Sub</option>
-              <option value="tlr-7x">Streamlight TLR-7X</option>
               <option value="tlr-8">Streamlight TLR-8 A</option>
-              <option value="tlr-8g">Streamlight TLR-8 G (green laser)</option>
-              <option value="tlr-9">Streamlight TLR-9</option>
-              <option value="tlr-10">Streamlight TLR-10</option>
-              <option value="tlr-rm1">Streamlight TLR RM 1</option>
-              <option value="tlr-rm2">Streamlight TLR RM 2</option>
             </optgroup>
-
             <optgroup label="─── SureFire ───">
+              <option value="sf-x300">SureFire X300U (any)</option>
               <option value="sf-x300u-a">SureFire X300U-A</option>
-              <option value="sf-x300u-b">SureFire X300U-B</option>
-              <option value="sf-x300t">SureFire X300T Turbo</option>
-              <option value="sf-x400u">SureFire X400U (light + laser)</option>
               <option value="sf-xc1">SureFire XC-1</option>
-              <option value="sf-xc2">SureFire XC-2 (light + laser)</option>
-              <option value="sf-masterfire">SureFire Masterfire</option>
             </optgroup>
-
             <optgroup label="─── Olight ───">
-              <option value="olight-pl-mini2">Olight PL-Mini 2 Valkyrie</option>
-              <option value="olight-pl-pro">Olight PL-Pro Valkyrie</option>
-              <option value="olight-pl350">Olight PL350 Valkyrie</option>
+              <option value="olight-pl-mini2">Olight PL-Mini 2</option>
               <option value="olight-baldr-mini">Olight Baldr Mini</option>
-              <option value="olight-baldr-pro">Olight Baldr Pro</option>
-              <option value="olight-baldr-s">Olight Baldr S</option>
-              <option value="olight-baldr-rl-mini">Olight Baldr RL Mini</option>
             </optgroup>
-
-            <optgroup label="─── Nightstick ───">
-              <option value="ns-twm-30">Nightstick TWM-30</option>
-              <option value="ns-twm-350">Nightstick TWM-350</option>
-              <option value="ns-twm-852">Nightstick TWM-852</option>
-              <option value="ns-twm-855xl">Nightstick TWM-855XL</option>
-              <option value="ns-twm-30t">Nightstick TWM-30T (light+laser)</option>
-            </optgroup>
-
-            <optgroup label="─── Inforce ───">
-              <option value="inforce-apl">Inforce APL</option>
-              <option value="inforce-aplc">Inforce APLc (compact)</option>
-              <option value="inforce-wild2">Inforce WML Gen 2</option>
-            </optgroup>
-
-            <optgroup label="─── Cloud Defensive ───">
-              <option value="cd-rein">Cloud Defensive REIN 2.0</option>
-              <option value="cd-rein-micro">Cloud Defensive REIN Micro</option>
-            </optgroup>
-
             <optgroup label="─── Crimson Trace ───">
               <option value="ct-rail-master">Crimson Trace Rail Master</option>
-              <option value="ct-lg-series">Crimson Trace LG-Series (laser)</option>
-              <option value="ct-cmr-207">Crimson Trace CMR-207</option>
-              <option value="ct-cmr-208">Crimson Trace CMR-208</option>
-            </optgroup>
-
-            <optgroup label="─── Viridian ───">
-              <option value="viridian-c5l">Viridian C5L</option>
-              <option value="viridian-e-series">Viridian E Series</option>
-              <option value="viridian-x5l">Viridian X5L</option>
-              <option value="viridian-reactor">Viridian Reactor 5</option>
-            </optgroup>
-
-            <optgroup label="─── Surefire / Laser ───">
-              <option value="insight-wl1">Insight WL1</option>
-              <option value="laser-max-uni">LaserMax Uni-Max</option>
-              <option value="laser-max-guide">LaserMax Guide Rod Laser</option>
             </optgroup>
           </select>
         </div>
@@ -717,10 +657,16 @@ async function querySupabase(filters, sortBy) {
   }
 
   // Weapon light filter
-  if (filters.light && filters.light !== 'any') {
-    url += `&or=(light.eq.${encodeURIComponent(filters.light)},light.eq.any)`;
-  } else if (filters.light === 'any') {
+  if (filters.light === 'any') {
     url += `&light=not.is.null`;
+  } else if (filters.light === 'sf-x300') {
+    // X300 matches both sf-x300 and sf-x300u-a
+    url += `&or=(light.eq.sf-x300,light.eq.sf-x300u-a,light.eq.any)`;
+  } else if (filters.light === 'tlr-1') {
+    // TLR-1 matches tlr-1 and tlr-1-hl
+    url += `&or=(light.eq.tlr-1,light.eq.tlr-1-hl,light.eq.any)`;
+  } else if (filters.light) {
+    url += `&or=(light.eq.${encodeURIComponent(filters.light)},light.eq.any)`;
   }
 
   // Sort
@@ -919,10 +865,16 @@ async function querySupabase(filters, sortBy) {
   
 
   // Weapon light filter
-  if (filters.light && filters.light !== 'any') {
-    url += `&or=(light.eq.${encodeURIComponent(filters.light)},light.eq.any)`;
-  } else if (filters.light === 'any') {
+  if (filters.light === 'any') {
     url += `&light=not.is.null`;
+  } else if (filters.light === 'sf-x300') {
+    // X300 matches both sf-x300 and sf-x300u-a
+    url += `&or=(light.eq.sf-x300,light.eq.sf-x300u-a,light.eq.any)`;
+  } else if (filters.light === 'tlr-1') {
+    // TLR-1 matches tlr-1 and tlr-1-hl
+    url += `&or=(light.eq.tlr-1,light.eq.tlr-1-hl,light.eq.any)`;
+  } else if (filters.light) {
+    url += `&or=(light.eq.${encodeURIComponent(filters.light)},light.eq.any)`;
   }
 
   // Sort
