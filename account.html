@@ -325,7 +325,7 @@
 <script>
 const SUPABASE_URL = 'https://crkjxsexcnjzlzwfxxfz.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNya2p4c2V4Y25qemx6d2Z4eGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDUxOTgsImV4cCI6MjA5MzAyMTE5OH0.6JAN9AH6a4RF4nMugqOREkL4sHulE3vhyk3zyQm74OI';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let uploadedPhotos = []; // {file, url, path}
