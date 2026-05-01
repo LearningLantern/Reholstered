@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Listing — Reholstered Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0f0f0f;
+    --off-white: #f5f3ef;
+    --tan: #c8b89a;
+    --tan-light: #e8dfd0;
+    --rust: #b85c2c;
+    --rust-dark: #8f4420;
+    --gray: #6b6560;
+    --gray-light: #e2ddd8;
+    --card-bg: #ffffff;
+    --border: #ddd8d0;
+    --danger: #c62828;
+    --green: #2e7d32;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Barlow', sans-serif; background: var(--off-white); color: var(--black); min-height: 100vh; }
+
+  nav {
+    background: var(--black); padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; position: sticky; top: 0; z-index: 100;
+  }
+  .nav-logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; color: var(--off-white); text-decoration: none; letter-spacing: .04em; }
+  .nav-logo span { color: var(--tan); }
+  .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+  .nav-links a { font-size: 13px; font-weight: 500; color: #aaa; text-decoration: none; letter-spacing: .04em; text-transform: uppercase; transition: color .2s; }
+  .nav-links a:hover { color: var(--off-white); }
+  .nav-btn { background: var(--rust); color: #fff !important; padding: 6px 14px; border-radius: 4px; font-size: 12px !important; }
+
+  .breadcrumb { max-width: 1100px; margin: 0 auto; padding: 1rem 2rem .5rem; font-size: 13px; color: var(--gray); }
+  .breadcrumb a { color: var(--rust); text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  .main { max-width: 1100px; margin: 0 auto; padding: 0 2rem 4rem; display: grid; grid-template-columns: 1fr 360px; gap: 2rem; }
+
+  /* PHOTOS */
+  .photo-gallery { position: sticky; top: 72px; align-self: start; }
+  .main-photo {
+    width: 100%; aspect-ratio: 4/3; object-fit: cover;
+    border-radius: 8px; background: var(--gray-light);
+    border: 1px solid var(--border); margin-bottom: 8px;
+    cursor: zoom-in;
+  }
+  .main-photo-placeholder {
+    width: 100%; aspect-ratio: 4/3; border-radius: 8px;
+    background: var(--gray-light); border: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 8px; color: var(--gray);
+    font-size: 13px; margin-bottom: 8px;
+  }
+  .photo-thumbs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .photo-thumb-sm {
+    width: 64px; height: 64px; object-fit: cover; border-radius: 4px;
+    border: 2px solid transparent; cursor: pointer; transition: border-color .15s;
+  }
+  .photo-thumb-sm.active { border-color: var(--rust); }
+  .photo-thumb-sm:hover { border-color: var(--tan); }
+
+  /* LISTING DETAIL */
+  .listing-detail {}
+  .listing-brand {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
+    font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--rust); margin-bottom: .25rem;
+  }
+  .listing-title {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 32px;
+    font-weight: 700; line-height: 1.1; margin-bottom: .75rem;
+  }
+  .listing-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
+  .meta-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 500; padding: 4px 10px;
+    border-radius: 3px; background: var(--gray-light); color: var(--gray);
+  }
+  .meta-tag svg { width: 12px; height: 12px; }
+  .listing-price-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 1rem; }
+  .listing-price {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 42px;
+    font-weight: 700; color: var(--black);
+  }
+  .listing-shipping { font-size: 14px; color: var(--gray); }
+  .cond-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 3px; text-transform: uppercase; letter-spacing: .06em; }
+  .cond-like_new { background: #e8f5e9; color: #2e7d32; }
+  .cond-good { background: #e3f2fd; color: #1565c0; }
+  .cond-fair { background: #fff3e0; color: #e65100; }
+  .cond-poor { background: #fce4ec; color: #c62828; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gray); margin-bottom: .5rem; }
+  .description { font-size: 15px; line-height: 1.7; color: #333; white-space: pre-line; }
+
+  .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .spec { background: var(--off-white); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; }
+  .spec-label { font-size: 11px; color: var(--gray); font-weight: 500; margin-bottom: 2px; }
+  .spec-value { font-size: 14px; font-weight: 500; }
+
+  /* SELLER */
+  .seller-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .seller-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+  .seller-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--tan-light); display: flex; align-items: center;
+    justify-content: center; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 700; color: var(--rust); flex-shrink: 0;
+  }
+  .seller-name { font-weight: 500; font-size: 15px; }
+  .seller-location { font-size: 13px; color: var(--gray); margin-top: 2px; }
+
+  /* CONTACT / MESSAGING */
+  .contact-section {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem;
+  }
+  .contact-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 1rem; }
+  .btn-contact {
+    width: 100%; padding: 13px; background: var(--rust); color: #fff;
+    border: none; border-radius: 4px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    cursor: pointer; transition: background .2s; margin-bottom: .75rem;
+  }
+  .btn-contact:hover { background: var(--rust-dark); }
+  .btn-contact:disabled { background: #ccc; cursor: not-allowed; }
+  .signin-prompt { font-size: 13px; color: var(--gray); text-align: center; }
+  .signin-prompt a { color: var(--rust); text-decoration: none; font-weight: 500; }
+
+  /* MESSAGE THREAD */
+  .message-thread { margin-top: 1rem; }
+  .messages-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; padding-right: 4px; }
+  .message-bubble {
+    max-width: 85%; padding: 10px 12px; border-radius: 12px;
+    font-size: 14px; line-height: 1.5;
+  }
+  .message-bubble.mine {
+    background: var(--rust); color: #fff; align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .message-bubble.theirs {
+    background: var(--gray-light); color: var(--black); align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .message-time { font-size: 11px; opacity: .6; margin-top: 3px; }
+  .message-input-row { display: flex; gap: 8px; }
+  .message-input {
+    flex: 1; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 14px; font-family: 'Barlow', sans-serif;
+    background: var(--off-white); resize: none; height: 44px;
+    transition: border-color .2s;
+  }
+  .message-input:focus { outline: none; border-color: var(--rust); }
+  .btn-send {
+    padding: 10px 16px; background: var(--rust); color: #fff; border: none;
+    border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: background .2s; white-space: nowrap;
+  }
+  .btn-send:hover { background: var(--rust-dark); }
+  .btn-send:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* SOLD BADGE */
+  .sold-overlay {
+    background: #333; color: #fff; text-align: center;
+    padding: 12px; border-radius: 4px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; margin-bottom: .75rem;
+  }
+
+  /* LIGHTBOX */
+  .lightbox {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.92);
+    z-index: 1000; align-items: center; justify-content: center;
+    cursor: zoom-out;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 4px; }
+  .lightbox-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: #fff; font-size: 32px; cursor: pointer; line-height: 1; }
+
+  /* NOT FOUND */
+  .not-found { text-align: center; padding: 6rem 2rem; color: var(--gray); }
+  .not-found h2 { font-size: 24px; font-weight: 500; color: var(--black); margin-bottom: .5rem; }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+    .photo-gallery { position: static; }
+    .listing-title { font-size: 26px; }
+    .listing-price { font-size: 32px; }
+  }
+  @media (max-width: 600px) {
+    .main { padding: 0 1rem 3rem; }
+    .breadcrumb { padding: .75rem 1rem .25rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/index.html" class="nav-logo">Re<span>holstered</span></a>
+  <div class="nav-links">
+    <a href="/index.html">Search</a>
+    <a href="/marketplace.html">Marketplace</a>
+    <a href="/account.html" id="nav-account">Sign In</a>
+  </div>
+</nav>
+
+<div class="breadcrumb">
+  <a href="/marketplace.html">← Marketplace</a>
+</div>
+
+<div class="main" id="main-content" style="display:none">
+  <!-- LEFT: PHOTOS -->
+  <div class="photo-gallery">
+    <div id="main-photo-container"></div>
+    <div class="photo-thumbs" id="photo-thumbs"></div>
+  </div>
+
+  <!-- RIGHT: DETAIL -->
+  <div class="listing-detail">
+    <div class="listing-brand" id="l-brand"></div>
+    <h1 class="listing-title" id="l-title"></h1>
+    <div class="listing-meta" id="l-meta"></div>
+    <div class="listing-price-row">
+      <div class="listing-price" id="l-price"></div>
+      <div class="listing-shipping" id="l-shipping"></div>
+    </div>
+
+    <div id="seller-card" class="seller-card">
+      <div class="seller-header">
+        <div class="seller-avatar" id="seller-avatar"></div>
+        <div>
+          <div class="seller-name" id="seller-name"></div>
+          <div class="seller-location" id="seller-location"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="contact-section" id="contact-section">
+      <div class="contact-title">Contact Seller</div>
+      <div id="contact-body"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div id="l-description-section" style="display:none">
+      <div class="section-label">Description</div>
+      <div class="description" id="l-description"></div>
+      <hr class="divider">
+    </div>
+
+    <div class="section-label">Details</div>
+    <div class="specs-grid" id="l-specs"></div>
+
+    <div style="margin-top:1.5rem;font-size:12px;color:var(--gray)">
+      Listed by a founding seller — <strong>free listing through Sept 1, 2026</strong>
+    </div>
+  </div>
+</div>
+
+<div id="not-found" class="not-found" style="display:none">
+  <h2>Listing not found</h2>
+  <p>This listing may have been removed or sold.</p>
+  <a href="/marketplace.html" style="color:var(--rust);text-decoration:none;font-weight:500;margin-top:1rem;display:inline-block">← Back to Marketplace</a>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightbox-img" src="" alt="Full size photo">
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://crkjxsexcnjzlzwfxxfz.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNya2p4c2V4Y25qemx6d2Z4eGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDUxOTgsImV4cCI6MjA5MzAyMTE5OH0.6JAN9AH6a4RF4nMugqOREkL4sHulE3vhyk3zyQm74OI';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let listing = null;
+let threadId = null;
+let messageInterval = null;
+
+const conditionLabels = { like_new: 'Like New', good: 'Good', fair: 'Fair', poor: 'Poor' };
+const carryLabels = { iwb: 'IWB', aiwb: 'AIWB', owb: 'OWB', shoulder: 'Shoulder', ankle: 'Ankle' };
+
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const listingId = params.get('id');
+  if (!listingId) { showNotFound(); return; }
+
+  const { data: { user } } = await db.auth.getUser();
+  currentUser = user;
+
+  if (user) {
+    document.getElementById('nav-account').textContent = 'My Account';
+    document.getElementById('nav-account').href = '/account.html';
+  }
+
+  await loadListing(listingId);
+}
+
+async function loadListing(id) {
+  const { data, error } = await db
+    .from('listings')
+    .select('*, listing_images(url, position), profiles(username, full_name, location)')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) { showNotFound(); return; }
+
+  listing = data;
+  document.title = `${data.title} — Reholstered`;
+
+  renderListing(data);
+  document.getElementById('main-content').style.display = 'grid';
+
+  // Increment view count
+  db.from('listings').update({ view_count: (data.view_count || 0) + 1 }).eq('id', id);
+
+  // Load messaging if user is logged in and not the seller
+  if (currentUser && currentUser.id !== data.seller_id) {
+    await loadOrCreateThread(id, data.seller_id);
+  }
+}
+
+function renderListing(l) {
+  document.getElementById('l-brand').textContent = l.brand || '';
+  document.getElementById('l-title').textContent = l.title;
+  document.getElementById('l-price').textContent = `$${parseFloat(l.price).toFixed(2)}`;
+
+  const shipping = l.shipping_option === 'free' ? 'Free shipping'
+    : l.shipping_option === 'paid' ? `+ $${parseFloat(l.shipping_price||0).toFixed(2)} shipping`
+    : 'Local pickup only';
+  document.getElementById('l-shipping').textContent = shipping;
+
+  // Meta tags
+  const metaTags = [];
+  if (l.condition) metaTags.push(`<span class="meta-tag cond-badge cond-${l.condition}">${conditionLabels[l.condition]}</span>`);
+  if (l.carry_type) metaTags.push(`<span class="meta-tag">${carryLabels[l.carry_type] || l.carry_type}</span>`);
+  if (l.gun_model) metaTags.push(`<span class="meta-tag">${l.gun_model}</span>`);
+  if (l.ships_from) metaTags.push(`<span class="meta-tag">📍 ${l.ships_from}</span>`);
+  document.getElementById('l-meta').innerHTML = metaTags.join('');
+
+  // Photos
+  const images = (l.listing_images || []).sort((a,b) => a.position - b.position);
+  const photoContainer = document.getElementById('main-photo-container');
+  const thumbsContainer = document.getElementById('photo-thumbs');
+
+  if (images.length) {
+    photoContainer.innerHTML = `<img class="main-photo" id="main-photo" src="${images[0].url}" alt="${l.title}" onclick="openLightbox('${images[0].url}')">`;
+    thumbsContainer.innerHTML = images.map((img, i) =>
+      `<img class="photo-thumb-sm ${i===0?'active':''}" src="${img.url}" alt="Photo ${i+1}" onclick="switchPhoto('${img.url}', this)">`
+    ).join('');
+  } else {
+    photoContainer.innerHTML = `
+      <div class="main-photo-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span>No photos</span>
+      </div>
+    `;
+  }
+
+  // Seller
+  const profile = l.profiles || {};
+  const name = profile.full_name || profile.username || 'Seller';
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('seller-avatar').textContent = initials;
+  document.getElementById('seller-name').textContent = name;
+  document.getElementById('seller-location').textContent = profile.location || l.ships_from || '';
+
+  // Description
+  if (l.description) {
+    document.getElementById('l-description').textContent = l.description;
+    document.getElementById('l-description-section').style.display = 'block';
+  }
+
+  // Specs
+  const specs = [
+    { label: 'Brand', value: l.brand },
+    { label: 'Gun Model', value: l.gun_model },
+    { label: 'Carry Type', value: carryLabels[l.carry_type] || l.carry_type },
+    { label: 'Condition', value: conditionLabels[l.condition] || l.condition },
+    { label: 'Material', value: l.material },
+    { label: 'Hand', value: l.hand === 'right' ? 'Right Hand' : l.hand === 'left' ? 'Left Hand' : 'Ambidextrous' },
+    { label: 'Light Compatible', value: l.light_compatible },
+    { label: 'Optic Compatible', value: l.optic_compatible },
+  ].filter(s => s.value);
+
+  document.getElementById('l-specs').innerHTML = specs.map(s => `
+    <div class="spec">
+      <div class="spec-label">${s.label}</div>
+      <div class="spec-value">${s.value}</div>
+    </div>
+  `).join('');
+
+  // Contact section
+  renderContactSection(l);
+}
+
+function renderContactSection(l) {
+  const contactBody = document.getElementById('contact-body');
+
+  if (l.status === 'sold') {
+    contactBody.innerHTML = '<div class="sold-overlay">This item has been sold</div>';
+    return;
+  }
+
+  if (!currentUser) {
+    contactBody.innerHTML = `
+      <button class="btn-contact" onclick="window.location.href='/account.html'">Sign In to Contact Seller</button>
+      <div class="signin-prompt">Don't have an account? <a href="/account.html">Create one free</a></div>
+    `;
+    return;
+  }
+
+  if (currentUser.id === l.seller_id) {
+    contactBody.innerHTML = `
+      <div style="text-align:center;color:var(--gray);font-size:14px;padding:.5rem">
+        This is your listing. <a href="/account.html" style="color:var(--rust);text-decoration:none;font-weight:500">Manage it here.</a>
+      </div>
+    `;
+    return;
+  }
+
+  // Logged in buyer — show messaging
+  contactBody.innerHTML = `
+    <div class="message-thread">
+      <div class="messages-list" id="messages-list">
+        <div style="text-align:center;color:var(--gray);font-size:13px;padding:1rem">Loading messages...</div>
+      </div>
+      <div class="message-input-row">
+        <textarea class="message-input" id="message-input" placeholder="Ask about condition, shipping, or make an offer..." onkeydown="handleMessageKey(event)"></textarea>
+        <button class="btn-send" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  `;
+}
+
+// ─── MESSAGING ────────────────────────────────────────────────────
+async function loadOrCreateThread(listingId, sellerId) {
+  // Check if thread exists
+  const { data: existing } = await db
+    .from('message_threads')
+    .select('id')
+    .eq('listing_id', listingId)
+    .eq('buyer_id', currentUser.id)
+    .single();
+
+  if (existing) {
+    threadId = existing.id;
+  } else {
+    // Thread will be created on first message
+    threadId = null;
+  }
+
+  if (threadId) {
+    await loadMessages();
+    // Poll for new messages every 5 seconds
+    messageInterval = setInterval(loadMessages, 5000);
+  } else {
+    renderNoMessages();
+  }
+}
+
+function renderNoMessages() {
+  const list = document.getElementById('messages-list');
+  if (!list) return;
+  list.innerHTML = `<div style="text-align:center;color:var(--gray);font-size:13px;padding:1rem">Send a message to start a conversation with the seller.</div>`;
+}
+
+async function loadMessages() {
+  if (!threadId) return;
+  const list = document.getElementById('messages-list');
+  if (!list) return;
+
+  const { data, error } = await db
+    .from('messages')
+    .select('*')
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: true });
+
+  if (error || !data) return;
+
+  if (!data.length) { renderNoMessages(); return; }
+
+  list.innerHTML = data.map(msg => {
+    const mine = msg.sender_id === currentUser.id;
+    const time = new Date(msg.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    return `
+      <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'}">
+        <div class="message-bubble ${mine ? 'mine' : 'theirs'}">
+          ${msg.body}
+          <div class="message-time">${time}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Scroll to bottom
+  list.scrollTop = list.scrollHeight;
+
+  // Mark messages as read
+  db.from('messages')
+    .update({ read: true })
+    .eq('thread_id', threadId)
+    .neq('sender_id', currentUser.id);
+}
+
+async function sendMessage() {
+  const input = document.getElementById('message-input');
+  const btn = document.querySelector('.btn-send');
+  const body = input.value.trim();
+  if (!body || !listing) return;
+
+  btn.disabled = true;
+  input.disabled = true;
+
+  // Create thread if doesn't exist
+  if (!threadId) {
+    const { data: thread, error } = await db
+      .from('message_threads')
+      .insert({
+        listing_id: listing.id,
+        buyer_id: currentUser.id,
+        seller_id: listing.seller_id,
+      })
+      .select()
+      .single();
+
+    if (error || !thread) {
+      btn.disabled = false; input.disabled = false;
+      alert('Could not start conversation. Please try again.');
+      return;
+    }
+    threadId = thread.id;
+    messageInterval = setInterval(loadMessages, 5000);
+  }
+
+  const { error } = await db.from('messages').insert({
+    thread_id: threadId,
+    sender_id: currentUser.id,
+    body,
+  });
+
+  if (!error) {
+    input.value = '';
+    await loadMessages();
+  }
+
+  btn.disabled = false;
+  input.disabled = false;
+  input.focus();
+}
+
+function handleMessageKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+// ─── PHOTO GALLERY ────────────────────────────────────────────────
+function switchPhoto(url, thumbEl) {
+  document.getElementById('main-photo').src = url;
+  document.getElementById('main-photo').onclick = () => openLightbox(url);
+  document.querySelectorAll('.photo-thumb-sm').forEach(t => t.classList.remove('active'));
+  thumbEl.classList.add('active');
+}
+
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+function showNotFound() {
+  document.getElementById('not-found').style.display = 'block';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// Cleanup on leave
+window.addEventListener('beforeunload', () => {
+  if (messageInterval) clearInterval(messageInterval);
+});
+
+init();
+</script>
+</body>
+</html>
