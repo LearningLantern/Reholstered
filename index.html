@@ -117,11 +117,11 @@
   <a href="#" class="logo"><span class="logo-dot"></span>REHOLSTERED</a>
   <ul class="nav-links">
     <li><a href="#" class="active">Find Holsters</a></li>
-    <li><a href="#" onclick="document.getElementById('used-tab').click();return false;">Used Market</a></li>
+    <li><a href="#" onclick="document.getElementById('used-tab').click();document.querySelector('.tabs').scrollIntoView({behavior:'smooth',block:'start'});return false;">Used Market</a></li>
     <li><a href="#">Brands</a></li>
     <li><a href="#">About</a></li>
   </ul>
-  <button class="nav-btn" onclick="document.getElementById('used-tab').click()">Sell Your Holster</button>
+  <button class="nav-btn" onclick="document.getElementById('used-tab').click();document.querySelector('.tabs').scrollIntoView({behavior:'smooth',block:'start'})">Sell Your Holster</button>
 </nav>
 
 <section class="hero">
@@ -1004,6 +1004,7 @@ function showTab(tab, el) {
   el.classList.add('active');
   document.getElementById('new-section').style.display = tab === 'new' ? 'block' : 'none';
   document.getElementById('used-section').style.display = tab === 'used' ? 'block' : 'none';
+  document.querySelector('.tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function notifyMe() {
