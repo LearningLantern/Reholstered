@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Used Holster Marketplace — Reholstered</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0f0f0f;
+    --off-white: #f5f3ef;
+    --tan: #c8b89a;
+    --tan-light: #e8dfd0;
+    --rust: #b85c2c;
+    --rust-dark: #8f4420;
+    --gray: #6b6560;
+    --gray-light: #e2ddd8;
+    --green: #2d4a2d;
+    --card-bg: #ffffff;
+    --border: #ddd8d0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--off-white);
+    color: var(--black);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--black);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--off-white);
+    text-decoration: none;
+    letter-spacing: .04em;
+  }
+  .nav-logo span { color: var(--tan); }
+  .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+  .nav-links a {
+    font-size: 13px;
+    font-weight: 500;
+    color: #aaa;
+    text-decoration: none;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    transition: color .2s;
+  }
+  .nav-links a:hover, .nav-links a.active { color: var(--off-white); }
+  .nav-btn {
+    background: var(--rust);
+    color: #fff !important;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 12px !important;
+    transition: background .2s !important;
+  }
+  .nav-btn:hover { background: var(--rust-dark) !important; }
+
+  /* HERO BANNER */
+  .hero {
+    background: var(--black);
+    padding: 3rem 2rem 2.5rem;
+    border-bottom: 3px solid var(--rust);
+  }
+  .hero-inner { max-width: 1100px; margin: 0 auto; }
+  .hero-tag {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: .5rem;
+  }
+  .hero h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 700;
+    color: var(--off-white);
+    line-height: 1;
+    letter-spacing: .02em;
+    margin-bottom: .75rem;
+  }
+  .hero p {
+    font-size: 15px;
+    color: #888;
+    max-width: 480px;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--rust);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background .2s;
+  }
+  .hero-cta:hover { background: var(--rust-dark); }
+  .founding-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(200, 184, 154, 0.15);
+    border: 1px solid rgba(200, 184, 154, 0.3);
+    color: var(--tan);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .founding-badge svg { width: 12px; height: 12px; }
+
+  /* FILTERS */
+  .filters-bar {
+    background: var(--black);
+    border-bottom: 1px solid #222;
+    padding: .75rem 2rem;
+  }
+  .filters-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .filter-select {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #ccc;
+    padding: 6px 28px 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Barlow', sans-serif;
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    transition: border-color .2s;
+  }
+  .filter-select:focus { outline: none; border-color: var(--rust); }
+  .filter-search {
+    flex: 1;
+    min-width: 200px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #ccc;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Barlow', sans-serif;
+  }
+  .filter-search::placeholder { color: #555; }
+  .filter-search:focus { outline: none; border-color: var(--rust); }
+  .filter-count {
+    font-size: 12px;
+    color: #555;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  /* MAIN LAYOUT */
+  .main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+  /* LISTINGS GRID */
+  .listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* LISTING CARD */
+  .listing-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s, box-shadow .15s;
+    display: flex;
+    flex-direction: column;
+  }
+  .listing-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  }
+  .card-photo {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    background: var(--gray-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray);
+    font-size: 13px;
+  }
+  .card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .card-photo-placeholder {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--gray-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--gray);
+    font-size: 12px;
+  }
+  .card-photo-placeholder svg { opacity: .4; }
+  .card-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .card-brand {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--rust);
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--black);
+  }
+  .card-gun {
+    font-size: 13px;
+    color: var(--gray);
+  }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--gray-light);
+  }
+  .card-price {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--black);
+  }
+  .card-condition {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .cond-like_new { background: #e8f5e9; color: #2e7d32; }
+  .cond-good { background: #e3f2fd; color: #1565c0; }
+  .cond-fair { background: #fff3e0; color: #e65100; }
+  .cond-poor { background: #fce4ec; color: #c62828; }
+  .card-shipping {
+    font-size: 12px;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--gray);
+  }
+  .empty-state svg { opacity: .3; margin-bottom: 1rem; }
+  .empty-state h3 { font-size: 18px; font-weight: 500; margin-bottom: .5rem; color: var(--black); }
+  .empty-state p { font-size: 14px; }
+
+  /* LOADING */
+  .loading-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+  .skeleton {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .skeleton-photo {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  .skeleton-body { padding: 1rem; display: flex; flex-direction: column; gap: 8px; }
+  .skeleton-line {
+    height: 12px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  /* FOOTER */
+  footer {
+    background: var(--black);
+    color: #555;
+    text-align: center;
+    padding: 2rem;
+    font-size: 13px;
+    margin-top: 4rem;
+    border-top: 1px solid #1a1a1a;
+  }
+  footer a { color: var(--tan); text-decoration: none; }
+
+  @media (max-width: 600px) {
+    .hero { padding: 2rem 1rem 1.5rem; }
+    .main { padding: 1rem; }
+    .filters-bar { padding: .75rem 1rem; }
+    .nav-links .hide-mobile { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/index.html" class="nav-logo">Re<span>holstered</span></a>
+  <div class="nav-links">
+    <a href="/index.html" class="hide-mobile">Search</a>
+    <a href="/marketplace.html" class="active">Marketplace</a>
+    <a href="/account.html" id="nav-account-link">Sell a Holster</a>
+    <a href="/account.html" class="nav-btn" id="nav-auth-btn">Sign In</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">Used Holster Marketplace</div>
+    <h1>Find Your Next<br>Carry Solution</h1>
+    <p>Buy and sell used holsters directly from the community. Every listing verified by a real person.</p>
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+      <a href="/account.html" class="hero-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        List Your Holster
+      </a>
+      <span class="founding-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Free to list through Sept 1, 2026
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="filters-bar">
+  <div class="filters-inner">
+    <select class="filter-select" id="filter-brand" onchange="applyFilters()">
+      <option value="">All Brands</option>
+    </select>
+    <select class="filter-select" id="filter-gun" onchange="applyFilters()">
+      <option value="">All Guns</option>
+    </select>
+    <select class="filter-select" id="filter-carry" onchange="applyFilters()">
+      <option value="">All Carry Types</option>
+      <option value="iwb">IWB</option>
+      <option value="aiwb">AIWB</option>
+      <option value="owb">OWB</option>
+      <option value="shoulder">Shoulder</option>
+      <option value="ankle">Ankle</option>
+    </select>
+    <select class="filter-select" id="filter-condition" onchange="applyFilters()">
+      <option value="">Any Condition</option>
+      <option value="like_new">Like New</option>
+      <option value="good">Good</option>
+      <option value="fair">Fair</option>
+      <option value="poor">Poor</option>
+    </select>
+    <input type="text" class="filter-search" id="filter-search" placeholder="Search listings..." oninput="applyFilters()">
+    <span class="filter-count" id="filter-count"></span>
+  </div>
+</div>
+
+<div class="main">
+  <div id="loading-state" class="loading-grid">
+    <div class="skeleton"><div class="skeleton-photo"></div><div class="skeleton-body"><div class="skeleton-line" style="width:40%"></div><div class="skeleton-line" style="width:75%"></div><div class="skeleton-line" style="width:55%"></div></div></div>
+    <div class="skeleton"><div class="skeleton-photo"></div><div class="skeleton-body"><div class="skeleton-line" style="width:40%"></div><div class="skeleton-line" style="width:75%"></div><div class="skeleton-line" style="width:55%"></div></div></div>
+    <div class="skeleton"><div class="skeleton-photo"></div><div class="skeleton-body"><div class="skeleton-line" style="width:40%"></div><div class="skeleton-line" style="width:75%"></div><div class="skeleton-line" style="width:55%"></div></div></div>
+  </div>
+  <div id="listings-grid" class="listings-grid" style="display:none"></div>
+</div>
+
+<footer>
+  <p>Reholstered Marketplace &mdash; <a href="/index.html">Search New Holsters</a> &mdash; Founding sellers list free through September 1, 2026</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://crkjxsexcnjzlzwfxxfz.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNya2p4c2V4Y25qemx6d2Z4eGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDUxOTgsImV4cCI6MjA5MzAyMTE5OH0.6JAN9AH6a4RF4nMugqOREkL4sHulE3vhyk3zyQm74OI';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let allListings = [];
+let currentUser = null;
+
+const conditionLabels = {
+  like_new: 'Like New',
+  good: 'Good',
+  fair: 'Fair',
+  poor: 'Poor'
+};
+
+const shippingLabels = {
+  free: 'Free shipping',
+  paid: 'Buyer pays shipping',
+  local_only: 'Local pickup only'
+};
+
+async function init() {
+  const { data: { user } } = await supabase.auth.getUser();
+  currentUser = user;
+  updateNav(user);
+  await loadListings();
+}
+
+function updateNav(user) {
+  const authBtn = document.getElementById('nav-auth-btn');
+  const accountLink = document.getElementById('nav-account-link');
+  if (user) {
+    authBtn.textContent = 'My Account';
+    authBtn.href = '/account.html';
+    accountLink.textContent = 'Sell a Holster';
+  }
+}
+
+async function loadListings() {
+  const { data, error } = await supabase
+    .from('listings')
+    .select(`
+      *,
+      listing_images (url, position),
+      profiles (username, location)
+    `)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false });
+
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('listings-grid').style.display = 'grid';
+
+  if (error || !data) {
+    renderEmpty('Could not load listings. Please try again.');
+    return;
+  }
+
+  allListings = data;
+  populateFilters(data);
+  renderListings(data);
+}
+
+function populateFilters(listings) {
+  const brands = [...new Set(listings.map(l => l.brand).filter(Boolean))].sort();
+  const guns = [...new Set(listings.map(l => l.gun_model).filter(Boolean))].sort();
+
+  const brandSel = document.getElementById('filter-brand');
+  brands.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b; opt.textContent = b;
+    brandSel.appendChild(opt);
+  });
+
+  const gunSel = document.getElementById('filter-gun');
+  guns.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    gunSel.appendChild(opt);
+  });
+}
+
+function applyFilters() {
+  const brand = document.getElementById('filter-brand').value;
+  const gun = document.getElementById('filter-gun').value;
+  const carry = document.getElementById('filter-carry').value;
+  const condition = document.getElementById('filter-condition').value;
+  const search = document.getElementById('filter-search').value.toLowerCase();
+
+  const filtered = allListings.filter(l => {
+    if (brand && l.brand !== brand) return false;
+    if (gun && l.gun_model !== gun) return false;
+    if (carry && l.carry_type !== carry) return false;
+    if (condition && l.condition !== condition) return false;
+    if (search) {
+      const haystack = `${l.title} ${l.brand} ${l.gun_model} ${l.description}`.toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+
+  renderListings(filtered);
+}
+
+function renderListings(listings) {
+  const grid = document.getElementById('listings-grid');
+  document.getElementById('filter-count').textContent = `${listings.length} listing${listings.length !== 1 ? 's' : ''}`;
+
+  if (!listings.length) {
+    renderEmpty('No listings match your filters.');
+    return;
+  }
+
+  grid.innerHTML = listings.map(l => {
+    const images = (l.listing_images || []).sort((a,b) => a.position - b.position);
+    const primaryImage = images[0]?.url;
+    const price = parseFloat(l.price).toFixed(2);
+    const shipping = l.shipping_option === 'paid'
+      ? `+$${parseFloat(l.shipping_price || 0).toFixed(2)} shipping`
+      : shippingLabels[l.shipping_option] || '';
+
+    return `
+      <a href="/listing.html?id=${l.id}" class="listing-card">
+        ${primaryImage
+          ? `<div class="card-photo"><img src="${primaryImage}" alt="${l.title}" loading="lazy"></div>`
+          : `<div class="card-photo-placeholder">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span>No photo</span>
+            </div>`
+        }
+        <div class="card-body">
+          <div class="card-brand">${l.brand || 'Unknown Brand'}</div>
+          <div class="card-title">${l.title}</div>
+          <div class="card-gun">${l.gun_model || ''}</div>
+          <div class="card-shipping">${shipping}</div>
+          <div class="card-footer">
+            <div class="card-price">$${price}</div>
+            <span class="card-condition cond-${l.condition}">${conditionLabels[l.condition] || l.condition}</span>
+          </div>
+        </div>
+      </a>
+    `;
+  }).join('');
+}
+
+function renderEmpty(msg) {
+  document.getElementById('listings-grid').innerHTML = `
+    <div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h3>No listings found</h3>
+      <p>${msg}</p>
+    </div>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
