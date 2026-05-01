@@ -14,6 +14,11 @@ Fixes applied:
 - Step 7: Comp-Tac URL fixed, Milt Sparks draw_hand fixed
 - Step 8: Retry logic with exponential backoff on all requests
 - Step 9: material and in_stock fields added
+- URL Audit: Safariland/Comp-Tac/Blade-Tech/Fobus moved to Shopify scraper
+             G-Code fixed to tacticalholsters.com
+             Galco fixed to /holsters_8_1.html
+             DeSantis fixed to sitemap approach
+             Milt Sparks fixed to correct category URLs
 """
 
 import os
@@ -402,78 +407,8 @@ def scrape_shopify(brand_name, base_url, delay=1.5):
 # CUSTOM SCRAPERS — non-Shopify brands
 # ═══════════════════════════════════════════════════════════════════════════
 
-def scrape_safariland():
-    brand = "Safariland"
-    products = []
-    print(f"  Scraping {brand}...", flush=True)
-    base = "https://www.safariland.com"
-    seen = set()
-
-    categories = [
-        ("holsters/duty-holsters", "duty"),
-        ("holsters/concealment-holsters", "iwb"),
-        ("holsters/competition-holsters", "owb"),
-        ("holsters/duty-holsters/level-ii-holsters", "duty"),
-        ("holsters/duty-holsters/level-iii-holsters", "duty"),
-    ]
-
-    for cat_path, carry_hint in categories:
-        page = 1
-        while page <= 15:
-            r = fetch_with_retry(f"{base}/products/{cat_path}/?page={page}")
-            if not r or r.status_code != 200:
-                break
-            soup = BeautifulSoup(r.text, "html.parser")
-            cards = soup.select(
-                ".product-card, .product-tile, [class*='product-card'], "
-                "[class*='productCard'], [data-product-id], li.product"
-            )
-            if not cards:
-                break
-            new_found = 0
-            for card in cards:
-                name_el = card.select_one("h2, h3, h4, .product-name, .product-title, [class*='productName']")
-                price_el = card.select_one("[class*='price'], .price")
-                img_el = card.select_one("img")
-                link_el = card.select_one("a[href]")
-                if not name_el:
-                    continue
-                name = name_el.get_text(strip=True)
-                if not name or name in seen or len(name) < 4:
-                    continue
-                seen.add(name)
-                new_found += 1
-                price = clean_price(price_el.get_text() if price_el else None)
-                image_url = img_el.get("src", img_el.get("data-src", "")) if img_el else ""
-                if image_url and not image_url.startswith("http"):
-                    image_url = base + image_url
-                link = link_el.get("href", "") if link_el else ""
-                if link and not link.startswith("http"):
-                    link = base + link
-                combined = f"{name} {link} {carry_hint}"
-                products.append({
-                    "brand": brand, "name": name, "price": price,
-                    "image_url": image_url, "product_url": link,
-                    "carry_type": detect_carry(combined),
-                    "draw_hand": detect_hand(combined),
-                    "light": detect_light(combined),
-                    "optic": detect_optic(combined),
-                    "gun_model": detect_gun_model(combined),
-                    "material": detect_material(combined),
-                    "in_stock": None,
-                    "source": "custom",
-                    "last_scraped": datetime.utcnow().isoformat(),
-                })
-            if new_found == 0:
-                break
-            next_btn = soup.select_one("a[rel='next'], .pagination__next, [class*='next']")
-            if not next_btn:
-                break
-            page += 1
-            time.sleep(0.5)
-
-    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
-    return products
+# NOTE: Safariland, Comp-Tac, Blade-Tech, and Fobus moved to SHOPIFY_BRANDS
+# (confirmed on Shopify platform May 2026 — scrape_shopify() handles them)
 
 
 def scrape_blackhawk():
@@ -559,12 +494,13 @@ def scrape_galco():
     base = "https://www.galcogunleather.com"
     seen = set()
 
+    # Galco's real category URLs — confirmed via site search May 2026
     categories = [
-        ("/product-listing/iwb-holsters/", "iwb"),
-        ("/product-listing/owb-holsters/", "owb"),
-        ("/product-listing/shoulder-holsters/", "shoulder"),
-        ("/product-listing/ankle-holsters/", "ankle"),
-        ("/product-listing/duty-holsters/", "duty"),
+        ("/holsters/iwb-appendix-carry-holsters_8_1_135.html", "iwb"),
+        ("/holsters/owb-belt-holsters_8_1_134.html", "owb"),
+        ("/holsters/shoulder-chest-holster-systems_8_1_138.html", "shoulder"),
+        ("/holsters/ankle-holsters_8_1_139.html", "ankle"),
+        ("/holsters/pocket-holsters_8_1_143.html", "offbody"),
     ]
     for cat_path, carry_hint in categories:
         page = 1
@@ -623,101 +559,82 @@ def scrape_galco():
 
 
 def scrape_desantis():
+    """DeSantis uses a custom BigCommerce-style platform.
+    Real category URLs confirmed May 2026: /store/SEARCH-BY-HOLSTER-OR-ACCESSORY/
+    Using sitemap approach for reliability."""
     brand = "DeSantis"
     products = []
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.desantisholster.com"
-    page = 1
     seen = set()
-    while page <= 20:
-        r = fetch_with_retry(f"{base}/all-holsters/page/{page}/")
-        if not r or r.status_code != 200:
-            break
-        soup = BeautifulSoup(r.text, "html.parser")
-        cards = soup.select(".product, .woocommerce-LoopProduct, [class*='product-']")
-        if not cards:
-            break
-        new_found = 0
-        for card in cards:
-            name_el = card.select_one("h2, h3, .woocommerce-loop-product__title")
-            price_el = card.select_one(".price, .amount")
-            img_el = card.select_one("img")
-            link_el = card.select_one("a")
-            if not name_el:
-                continue
-            name = name_el.get_text(strip=True)
-            if not name or name in seen:
-                continue
-            seen.add(name)
-            new_found += 1
-            price = clean_price(price_el.get_text() if price_el else None)
-            image = img_el.get("src", img_el.get("data-src", "")) if img_el else ""
-            link = link_el.get("href", "") if link_el else ""
-            combined = f"{name} {link}"
-            products.append({
-                "brand": brand, "name": name, "price": price,
-                "image_url": image, "product_url": link,
-                "carry_type": detect_carry(combined),
-                "draw_hand": detect_hand(combined),
-                "light": detect_light(combined),
-                "optic": detect_optic(combined),
-                "gun_model": detect_gun_model(combined),
-                "material": detect_material(combined),
-                "in_stock": None,
-                "source": "custom",
-                "last_scraped": datetime.utcnow().isoformat(),
-            })
-        if new_found == 0:
-            break
-        page += 1
-        time.sleep(0.4)
-    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
-    return products
 
-
-def scrape_comptac():
-    brand = "Comp-Tac"
-    products = []
-    print(f"  Scraping {brand}...", flush=True)
-    base = "https://www.comp-tac.com"
-    seen = set()
-    # Step 7 fix: correct WooCommerce URL
-    categories = [
-        ("/product-category/holsters/iwb/", "iwb"),
-        ("/product-category/holsters/owb/", "owb"),
-        ("/product-category/holsters/", "iwb"),
+    # Try sitemap first — most reliable for custom platforms
+    sitemap_urls = [
+        f"{base}/sitemap.xml",
+        f"{base}/sitemap_index.xml",
     ]
-    for cat_path, carry_hint in categories:
-        page = 1
-        while page <= 10:
-            r = fetch_with_retry(f"{base}{cat_path}page/{page}/")
+    product_urls = []
+    for sitemap_url in sitemap_urls:
+        r = fetch_with_retry(sitemap_url)
+        if r and r.status_code == 200:
+            try:
+                soup = BeautifulSoup(r.text, "xml")
+                locs = [loc.text for loc in soup.find_all("loc")]
+                # Check if this is a sitemap index
+                sub_maps = [l for l in locs if "sitemap" in l.lower() and l != sitemap_url]
+                if sub_maps:
+                    for sm in sub_maps:
+                        rs = fetch_with_retry(sm)
+                        if rs and rs.status_code == 200:
+                            ss = BeautifulSoup(rs.text, "xml")
+                            product_urls += [loc.text for loc in ss.find_all("loc")
+                                           if any(k in loc.text.lower() for k in ["holster", "iwb", "owb"])]
+                else:
+                    product_urls = [l for l in locs
+                                   if any(k in l.lower() for k in ["holster", "iwb", "owb", "ankle", "shoulder"])]
+                if product_urls:
+                    break
+            except Exception:
+                pass
+
+    # Fallback: try their category pages directly
+    if not product_urls:
+        categories = [
+            ("/store/SEARCH-BY-HOLSTER-OR-ACCESSORY/IWB-HOLSTERS/", "iwb"),
+            ("/store/SEARCH-BY-HOLSTER-OR-ACCESSORY/OWB-HOLSTERS/", "owb"),
+            ("/store/SEARCH-BY-HOLSTER-OR-ACCESSORY/POCKET-HOLSTERS/", "offbody"),
+            ("/store/SEARCH-BY-HOLSTER-OR-ACCESSORY/ANKLE-HOLSTERS/", "ankle"),
+            ("/store/SEARCH-BY-HOLSTER-OR-ACCESSORY/SHOULDER-HOLSTERS/", "shoulder"),
+        ]
+        for cat_path, carry_hint in categories:
+            r = fetch_with_retry(base + cat_path)
             if not r or r.status_code != 200:
-                break
+                continue
             soup = BeautifulSoup(r.text, "html.parser")
-            cards = soup.select(".product, [class*='product-item'], .woocommerce-LoopProduct")
-            if not cards:
-                break
-            new_found = 0
+            cards = soup.select(".product, [class*='product-item'], article, li.product")
             for card in cards:
-                name_el = card.select_one("h2, h3, .product-title, .woocommerce-loop-product__title")
-                price_el = card.select_one(".price, .amount")
+                name_el = card.select_one("h2, h3, h4, [class*='title'], [class*='name']")
+                price_el = card.select_one("[class*='price'], .price")
                 img_el = card.select_one("img")
-                link_el = card.select_one("a")
+                link_el = card.select_one("a[href]")
                 if not name_el:
                     continue
                 name = name_el.get_text(strip=True)
-                if not name or name in seen:
+                if not name or name in seen or len(name) < 4:
                     continue
                 seen.add(name)
-                new_found += 1
                 price = clean_price(price_el.get_text() if price_el else None)
-                image = img_el.get("src", "") if img_el else ""
+                image = img_el.get("src", img_el.get("data-src", "")) if img_el else ""
                 link = link_el.get("href", "") if link_el else ""
+                if link and not link.startswith("http"):
+                    link = base + link
+                if image and not image.startswith("http"):
+                    image = base + image
                 combined = f"{name} {carry_hint}"
                 products.append({
                     "brand": brand, "name": name, "price": price,
-                    "image_url": image, "product_url": link,
-                    "carry_type": detect_carry(combined),
+                    "image_url": image, "product_url": link or base + cat_path,
+                    "carry_type": detect_carry(combined) or carry_hint,
                     "draw_hand": detect_hand(combined),
                     "light": detect_light(combined),
                     "optic": detect_optic(combined),
@@ -727,51 +644,32 @@ def scrape_comptac():
                     "source": "custom",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
-            if new_found == 0:
-                break
-            page += 1
             time.sleep(0.4)
-    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
-    return products
 
-
-def scrape_blade_tech():
-    brand = "Blade-Tech"
-    products = []
-    print(f"  Scraping {brand}...", flush=True)
-    base = "https://www.blade-tech.com"
-    seen = set()
-    page = 1
-    while page <= 20:
-        r = fetch_with_retry(f"{base}/holsters/?page={page}")
-        if not r or r.status_code != 200:
-            break
-        soup = BeautifulSoup(r.text, "html.parser")
-        cards = soup.select(".product-item, .product, [class*='product']")
-        if not cards:
-            break
-        new_found = 0
-        for card in cards:
-            name_el = card.select_one("h2, h3, .product-name")
-            price_el = card.select_one(".price, [class*='price']")
-            img_el = card.select_one("img")
-            link_el = card.select_one("a")
+    # Process sitemap URLs if found
+    for url in product_urls[:200]:
+        try:
+            pr = fetch_with_retry(url)
+            if not pr or pr.status_code != 200:
+                continue
+            ps = BeautifulSoup(pr.text, "html.parser")
+            name_el = ps.select_one("h1")
             if not name_el:
                 continue
             name = name_el.get_text(strip=True)
             if not name or name in seen:
                 continue
             seen.add(name)
-            new_found += 1
-            price = clean_price(price_el.get_text() if price_el else None)
-            image = img_el.get("src", img_el.get("data-src", "")) if img_el else ""
-            link = link_el.get("href", "") if link_el else ""
-            if link and not link.startswith("http"):
-                link = base + link
-            combined = f"{name} {link}"
+            price_el = ps.select_one("[class*='price'], .price, [itemprop='price']")
+            price = clean_price(price_el.get("content") or price_el.get_text() if price_el else None)
+            img_el = ps.select_one("img[itemprop='image'], [class*='product'] img")
+            image_url = img_el.get("src", img_el.get("data-src", "")) if img_el else ""
+            if image_url and not image_url.startswith("http"):
+                image_url = base + image_url
+            combined = f"{name} {url}"
             products.append({
                 "brand": brand, "name": name, "price": price,
-                "image_url": image, "product_url": link,
+                "image_url": image_url, "product_url": url,
                 "carry_type": detect_carry(combined),
                 "draw_hand": detect_hand(combined),
                 "light": detect_light(combined),
@@ -782,20 +680,27 @@ def scrape_blade_tech():
                 "source": "custom",
                 "last_scraped": datetime.utcnow().isoformat(),
             })
-        if new_found == 0:
-            break
-        page += 1
-        time.sleep(0.4)
+            time.sleep(0.3)
+        except Exception:
+            pass
+
     print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
+
+
+
+
+
+
 
 
 def scrape_gcode():
     brand = "G-Code Holsters"
     products = []
     print(f"  Scraping {brand}...", flush=True)
-    # Step 4 fix: correct URL — was tacticalholsters.com (wrong brand)
-    base = "https://www.gcode-holsters.com"
+    # G-Code's real site is tacticalholsters.com (confirmed May 2026)
+    # gcode-holsters.com is a dead domain
+    base = "https://www.tacticalholsters.com"
     seen = set()
     r = fetch_with_retry(f"{base}/holsters/")
     if r and r.status_code == 200:
@@ -835,97 +740,73 @@ def scrape_gcode():
     return products
 
 
-def scrape_fobus():
-    brand = "Fobus"
-    products = []
-    print(f"  Scraping {brand}...", flush=True)
-    base = "https://www.fobusholster.com"
-    seen = set()
-    page = 1
-    while page <= 10:
-        r = fetch_with_retry(f"{base}/holsters/page/{page}/")
-        if not r or r.status_code != 200:
-            break
-        soup = BeautifulSoup(r.text, "html.parser")
-        cards = soup.select(".product, .woocommerce-LoopProduct, [class*='product']")
-        if not cards:
-            break
-        new_found = 0
-        for card in cards:
-            name_el = card.select_one("h2, h3, .woocommerce-loop-product__title")
-            price_el = card.select_one(".price, .amount")
-            img_el = card.select_one("img")
-            link_el = card.select_one("a")
-            if not name_el:
-                continue
-            name = name_el.get_text(strip=True)
-            if not name or name in seen:
-                continue
-            seen.add(name)
-            new_found += 1
-            price = clean_price(price_el.get_text() if price_el else None)
-            image = img_el.get("src", "") if img_el else ""
-            link = link_el.get("href", "") if link_el else ""
-            combined = f"{name} {link}"
-            products.append({
-                "brand": brand, "name": name, "price": price,
-                "image_url": image, "product_url": link,
-                "carry_type": detect_carry(combined),
-                "draw_hand": detect_hand(combined),
-                "light": detect_light(combined),
-                "optic": detect_optic(combined),
-                "gun_model": detect_gun_model(combined),
-                "material": detect_material(combined),
-                "in_stock": None,
-                "source": "custom",
-                "last_scraped": datetime.utcnow().isoformat(),
-            })
-        if new_found == 0:
-            break
-        page += 1
-        time.sleep(0.4)
-    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
-    return products
+
 
 
 def scrape_miltsparks():
+    """Milt Sparks — premium leather holsters.
+    Real category URLs confirmed May 2026."""
     brand = "Milt Sparks"
     products = []
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.miltsparks.com"
     seen = set()
-    r = fetch_with_retry(f"{base}/holsters/")
-    if r and r.status_code == 200:
+
+    # Confirmed category URLs
+    categories = [
+        ("/inside-the-waistband/", "iwb"),
+        ("/outside-the-waistband/", "owb"),
+        ("/store/", None),  # in-stock items
+    ]
+
+    for cat_path, carry_hint in categories:
+        r = fetch_with_retry(base + cat_path)
+        if not r or r.status_code != 200:
+            continue
         soup = BeautifulSoup(r.text, "html.parser")
-        cards = soup.select(".product, .entry, [class*='product']")
-        for card in cards:
-            name_el = card.select_one("h2, h3, .entry-title")
-            price_el = card.select_one(".price, .amount")
-            img_el = card.select_one("img")
-            link_el = card.select_one("a")
-            if not name_el:
-                continue
-            name = name_el.get_text(strip=True)
-            if not name or name in seen:
-                continue
-            seen.add(name)
-            price = clean_price(price_el.get_text() if price_el else None)
-            image = img_el.get("src", "") if img_el else ""
-            link = link_el.get("href", "") if link_el else ""
-            combined = f"{name} {link}"
-            products.append({
-                "brand": brand, "name": name, "price": price,
-                "image_url": image, "product_url": link,
-                "carry_type": detect_carry(combined),
-                "draw_hand": detect_hand(combined),  # Step 7 fix: was hardcoded "right"
-                "light": detect_light(combined),
-                "optic": detect_optic(combined),
-                "gun_model": detect_gun_model(combined),
-                "material": detect_material(combined),
-                "in_stock": None,
-                "source": "custom",
-                "last_scraped": datetime.utcnow().isoformat(),
-            })
+        # Milt Sparks uses WordPress with product/post links
+        links = soup.select("a[href*='miltsparks.com']")
+        product_links = list({
+            a["href"] for a in links
+            if any(k in a["href"].lower() for k in ["holster", "waistband", "special", "criterion", "nexus", "vm-", "55bn", "om-"])
+            and "miltsparks.com" in a["href"]
+        })
+
+        for url in product_links[:50]:
+            try:
+                pr = fetch_with_retry(url)
+                if not pr or pr.status_code != 200:
+                    continue
+                ps = BeautifulSoup(pr.text, "html.parser")
+                name_el = ps.select_one("h1, .entry-title, .product-title")
+                if not name_el:
+                    continue
+                name = name_el.get_text(strip=True)
+                if not name or name in seen or len(name) < 4:
+                    continue
+                seen.add(name)
+                price_el = ps.select_one(".price, .amount, [class*='price']")
+                price = clean_price(price_el.get_text() if price_el else None)
+                img_el = ps.select_one(".wp-post-image, img[class*='product'], img[class*='attachment']")
+                image_url = img_el.get("src", "") if img_el else ""
+                combined = f"{name} {url} {carry_hint or ''}"
+                products.append({
+                    "brand": brand, "name": name, "price": price,
+                    "image_url": image_url, "product_url": url,
+                    "carry_type": detect_carry(combined) or carry_hint,
+                    "draw_hand": detect_hand(combined),
+                    "light": detect_light(combined),
+                    "optic": detect_optic(combined),
+                    "gun_model": detect_gun_model(combined),
+                    "material": detect_material(combined),
+                    "in_stock": None,
+                    "source": "custom",
+                    "last_scraped": datetime.utcnow().isoformat(),
+                })
+                time.sleep(0.3)
+            except Exception:
+                pass
+
     print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
@@ -1498,7 +1379,10 @@ SHOPIFY_BRANDS = [
     ("Craft Holsters",          "https://www.craftholsters.com"),
     ("T-Rex Arms",              "https://trex-arms.com"),
     ("Phlster Holsters",        "https://phlsterholsters.com"),
-    ("Comp-Tac Victory Gear",   "https://www.comp-tac.com"),
+    ("Safariland",              "https://safariland.com"),          # confirmed Shopify May 2026
+    ("Comp-Tac Victory Gear",   "https://www.comp-tac.com"),        # confirmed Shopify May 2026
+    ("Blade-Tech",              "https://blade-tech.com"),           # confirmed Shopify May 2026
+    ("Fobus",                   "https://www.fobusholster.com"),     # confirmed Shopify May 2026
     ("Bianchi Leather",         "https://bianchileather.com"),
     ("El Paso Saddlery",        "https://epsaddlery.com"),
     ("Fury Tactical",           "https://furytactical.com"),
@@ -1515,20 +1399,16 @@ SHOPIFY_BRANDS = [
 ]
 
 CUSTOM_SCRAPERS = [
-    scrape_safariland,
-    scrape_blackhawk,
-    scrape_galco,
-    scrape_desantis,
-    scrape_comptac,
-    scrape_blade_tech,
-    scrape_gcode,
-    scrape_fobus,
-    scrape_miltsparks,
-    scrape_don_hume,      # custom only — removed from SHOPIFY_BRANDS to avoid duplicates
-    scrape_vedder,
-    scrape_crossbreed,
-    scrape_stealthgear,
-    scrape_tulster,
+    scrape_blackhawk,     # custom platform — sitemap approach
+    scrape_galco,         # custom platform — fixed URLs
+    scrape_desantis,      # custom platform — sitemap approach
+    scrape_gcode,         # tacticalholsters.com — fixed URL
+    scrape_miltsparks,    # fixed category URLs
+    scrape_don_hume,      # WooCommerce — custom only, not in SHOPIFY_BRANDS
+    scrape_vedder,        # BigCommerce GraphQL
+    scrape_crossbreed,    # Shopify collection API
+    scrape_stealthgear,   # Shopify collection API
+    scrape_tulster,       # BigCommerce GraphQL
     scrape_raven_concealment,
     scrape_versacarry,
 ]
