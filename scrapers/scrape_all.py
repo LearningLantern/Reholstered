@@ -198,7 +198,50 @@ def detect_hand(text):
     if "ambi" in text: return "ambi"
     return "right"  # default
 
-def detect_light(text):
+# ─── Optic cut detection ─────────────────────────────────────────────────────
+OPTIC_KEYWORDS = {
+    # Trijicon
+    "rmr":          ["trijicon rmr", " rmr ", "rmr type 2", "rmrcc"],
+    "sro":          ["trijicon sro", " sro "],
+    "rmrcc":        ["rmrcc", "rmr cc"],
+    # Holosun
+    "holosun-507c": ["507c", "hs507c"],
+    "holosun-508t": ["508t", "hs508t"],
+    "holosun-509t": ["509t", "hs509t"],
+    "holosun-407c": ["407c", "hs407c"],
+    "holosun-510c": ["510c", "hs510c"],
+    "holosun-any":  ["holosun"],
+    # Shield
+    "shield-sms":   ["shield sms", " sms "],
+    "shield-rmsc":  ["shield rmsc", "rmsc", "shield rms"],
+    # Sig
+    "sig-romeo-zero":  ["romeo zero", "romeozero"],
+    "sig-romeo1-pro":  ["romeo1 pro", "romeo 1 pro"],
+    # Leupold
+    "leupold-dpp": ["deltapoint pro", "delta point pro", " dpp "],
+    # Vortex
+    "vortex-venom":  ["vortex venom", " venom "],
+    "vortex-razor":  ["vortex razor", " razor "],
+    # EOTech
+    "eotech-eflx":  ["eflx", "eotech eflx"],
+    # Burris
+    "burris-fastfire": ["fastfire", "fast fire"],
+    # Crimson Trace
+    "ct-cts1550":   ["cts-1550", "cts1550"],
+    # Generic
+    "any":          ["optic cut", "optic ready", "mos ", " or ", "rmr cut",
+                     "red dot cut", "optic compatible", "suppressor height"],
+}
+
+def detect_optic(text):
+    """Detect optic cut compatibility from product text."""
+    text = " " + text.lower() + " "
+    for optic_key, keywords in OPTIC_KEYWORDS.items():
+        if any(k in text for k in keywords):
+            return optic_key
+    return None
+    
+    def detect_light(text):
     """Detect weapon light compatibility from product text."""
     text = " " + text.lower() + " "
     for light_key, keywords in LIGHT_KEYWORDS.items():
