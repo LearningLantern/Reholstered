@@ -347,6 +347,7 @@ def scrape_shopify(brand_name, base_url, delay=1.5):
                     "draw_hand": detect_hand(combined_text),
                     "light": detect_light(combined_text),
                     "gun_model": detect_gun_model(combined_text),
+                    "optic": detect_optic(combined_text),
                     "source": "shopify",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
