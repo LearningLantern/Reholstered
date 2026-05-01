@@ -234,7 +234,7 @@ def save_to_supabase(products):
     total_saved = 0
     for i in range(0, len(products), batch_size):
         batch = products[i:i + batch_size]
-        r = requests.post(url, headers=headers, json=batch, timeout=30)
+        r = requests.post(url + "?on_conflict=product_url", headers=headers, json=batch, timeout=30)
         if r.status_code in (200, 201):
             total_saved += len(batch)
         else:
