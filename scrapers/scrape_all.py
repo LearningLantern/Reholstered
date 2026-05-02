@@ -44,10 +44,19 @@ HEADERS = {
 
 # ─── Retry helper ────────────────────────────────────────────────────────────
 def fetch_with_retry(url, headers=None, timeout=10, retries=3, delay=2):
-    """GET with exponential backoff. Returns Response or None."""
+    """GET with exponential backoff and rotating user agents. Returns Response or None."""
+    import random
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    ]
     for attempt in range(retries):
         try:
-            r = requests.get(url, headers=headers or HEADERS, timeout=timeout)
+            hdrs = dict(headers or HEADERS)
+            hdrs["User-Agent"] = random.choice(user_agents)
+            r = requests.get(url, headers=hdrs, timeout=timeout)
             if r.status_code == 429:
                 wait = delay * (2 ** attempt)
                 print(f"    ⏳ Rate limited — waiting {wait}s", flush=True)
@@ -864,65 +873,47 @@ def scrape_don_hume():
     return products
 
 
-# ─── Vedder — BigCommerce GraphQL ────────────────────────────────────────────
+# ─── Vedder — BigCommerce + HTML fallback ────────────────────────────────────
 def scrape_vedder():
+    """Vedder Holsters — BigCommerce.
+    Uses multiple approaches: GraphQL, sitemap, then direct category HTML."""
     brand = "Vedder Holsters"
     products = []
-    print(f"  Scraping {brand} (BigCommerce)...", flush=True)
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://www.vedderholsters.com"
-    graphql_url = f"{base}/graphql"
-    gql_headers = {"Content-Type": "application/json", "User-Agent": HEADERS["User-Agent"]}
-
-    QUERY = """
-    query CategoryProducts($entityId: Int!, $after: String) {
-      site {
-        category(entityId: $entityId) {
-          products(first: 50, after: $after) {
-            pageInfo { hasNextPage endCursor }
-            edges {
-              node {
-                name path description
-                prices { price { value } }
-                defaultImage { url(width: 400) }
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-    categories = [(23, "iwb"), (24, "owb"), (25, "aiwb"), (33, "iwb")]
     seen = set()
 
-    for cat_id, carry_hint in categories:
-        cursor = None
-        while True:
-            variables = {"entityId": cat_id}
-            if cursor:
-                variables["after"] = cursor
+    # Approach 1: Try collection-specific product feeds (BC exposes these)
+    collection_paths = [
+        ("/holsters/iwb-holsters/", "iwb"),
+        ("/holsters/owb-holsters/", "owb"),
+        ("/holsters/appendix-carry/", "aiwb"),
+        ("/holsters/", None),
+    ]
+
+    for path, carry_hint in collection_paths:
+        # Try the BC API feed for each category
+        feed_url = f"{base}{path}?format=json"
+        r = fetch_with_retry(feed_url, timeout=12)
+        if r and r.status_code == 200:
             try:
-                r = requests.post(graphql_url, headers=gql_headers,
-                                  json={"query": QUERY, "variables": variables}, timeout=12)
-                if r.status_code != 200:
-                    break
                 data = r.json()
-                page_products = data.get("data", {}).get("site", {}).get("category", {}).get("products", {})
-                for edge in page_products.get("edges", []):
-                    node = edge.get("node", {})
-                    name = node.get("name", "").strip()
+                items = data.get("products", data.get("items", []))
+                for item in items:
+                    name = (item.get("name") or item.get("title", "")).strip()
                     if not name or name in seen:
                         continue
                     seen.add(name)
-                    path = node.get("path", "")
-                    price_val = node.get("prices", {}).get("price", {}).get("value", 0)
-                    price = float(price_val) if price_val else None
-                    img = node.get("defaultImage", {})
-                    image_url = img.get("url", "") if img else ""
-                    desc = node.get("description", "")
-                    combined = f"{name} {desc}"
+                    price = clean_price(item.get("price") or item.get("calculated_price"))
+                    url = item.get("url", item.get("custom_url", {}).get("url", ""))
+                    if url and not url.startswith("http"):
+                        url = base + url
+                    img = item.get("primary_image", item.get("image", {}))
+                    image_url = img.get("url_thumbnail", img.get("url_standard", "")) if isinstance(img, dict) else ""
+                    combined = f"{name} {url} {carry_hint or ''}"
                     products.append({
                         "brand": brand, "name": name, "price": price,
-                        "image_url": image_url, "product_url": base + path,
+                        "image_url": image_url, "product_url": url or base + path,
                         "carry_type": detect_carry(combined) or carry_hint,
                         "draw_hand": detect_hand(combined),
                         "light": detect_light(combined),
@@ -930,57 +921,115 @@ def scrape_vedder():
                         "gun_model": detect_gun_model(combined),
                         "material": detect_material(combined),
                         "in_stock": None,
-                        "source": "bigcommerce_graphql",
+                        "source": "bigcommerce_feed",
                         "last_scraped": datetime.utcnow().isoformat(),
                     })
-                page_info = page_products.get("pageInfo", {})
-                if page_info.get("hasNextPage"):
-                    cursor = page_info.get("endCursor")
-                else:
-                    break
-                time.sleep(0.5)
-            except Exception as e:
-                print(f"    ❌ Vedder cat {cat_id}: {e}", flush=True)
-                break
+            except Exception:
+                pass
 
-    # Sitemap fallback
-    if not products:
-        try:
-            r = fetch_with_retry(f"{base}/sitemap.xml")
-            if r:
-                soup = BeautifulSoup(r.text, "xml")
-                urls = [loc.text for loc in soup.find_all("loc") if "/holsters/" in loc.text]
-                for url in urls[:150]:
-                    pr = fetch_with_retry(url)
-                    if not pr:
-                        continue
-                    ps = BeautifulSoup(pr.text, "html.parser")
-                    name_el = ps.select_one("h1")
+        # Also try HTML scrape of the category page
+        if len(products) < 5:
+            r2 = fetch_with_retry(base + path, timeout=12)
+            if r2 and r2.status_code == 200:
+                soup = BeautifulSoup(r2.text, "html.parser")
+                cards = soup.select(
+                    "[class*='productCard'], [class*='product-card'], "
+                    ".product, article[class*='product'], [data-product-id]"
+                )
+                for card in cards:
+                    name_el = card.select_one(
+                        "h2, h3, h4, [class*='productCard-title'], "
+                        "[class*='product-title'], [class*='card-title'], [class*='name']"
+                    )
+                    price_el = card.select_one("[class*='price'], .price")
+                    img_el = card.select_one("img[src], img[data-src]")
+                    link_el = card.select_one("a[href*='/holster'], a[href*='/iwb'], a[href*='/owb']")
                     if not name_el:
                         continue
                     name = name_el.get_text(strip=True)
-                    if not name or name in seen:
+                    if not name or name in seen or len(name) < 5:
                         continue
                     seen.add(name)
-                    price_el = ps.select_one("[class*='price']")
                     price = clean_price(price_el.get_text() if price_el else None)
-                    img_el = ps.select_one("img[itemprop='image']")
-                    image_url = img_el.get("src", "") if img_el else ""
-                    combined = f"{name} {url}"
+                    image_url = img_el.get("src", img_el.get("data-src", "")) if img_el else ""
+                    if image_url and not image_url.startswith("http"):
+                        image_url = "https:" + image_url if image_url.startswith("//") else base + image_url
+                    link = link_el.get("href", "") if link_el else ""
+                    if link and not link.startswith("http"):
+                        link = base + link
+                    combined = f"{name} {link} {carry_hint or ''}"
                     products.append({
                         "brand": brand, "name": name, "price": price,
-                        "image_url": image_url, "product_url": url,
-                        "carry_type": detect_carry(combined),
+                        "image_url": image_url, "product_url": link or base + path,
+                        "carry_type": detect_carry(combined) or carry_hint,
                         "draw_hand": detect_hand(combined),
                         "light": detect_light(combined),
                         "optic": detect_optic(combined),
                         "gun_model": detect_gun_model(combined),
                         "material": detect_material(combined),
                         "in_stock": None,
-                        "source": "bigcommerce_sitemap",
+                        "source": "bigcommerce_html",
                         "last_scraped": datetime.utcnow().isoformat(),
                     })
-                    time.sleep(0.3)
+        time.sleep(1.0)
+
+    # Approach 2: Sitemap fallback if still nothing
+    if not products:
+        try:
+            r = fetch_with_retry(f"{base}/sitemap.php?view=categories", timeout=10)
+            if r and r.status_code == 200:
+                soup = BeautifulSoup(r.text, "html.parser")
+                links = soup.select("a[href*='holster']")
+                cat_urls = list({
+                    (base + a["href"]) if not a["href"].startswith("http") else a["href"]
+                    for a in links
+                    if "holster" in a.get("href", "").lower()
+                })[:8]
+                for cat_url in cat_urls:
+                    r2 = fetch_with_retry(cat_url, timeout=12)
+                    if not r2 or r2.status_code != 200:
+                        continue
+                    soup2 = BeautifulSoup(r2.text, "html.parser")
+                    prod_links = soup2.select("a[href*='/holsters/'][href*='.html'], a[href*='/holsters/'][href*='/iwb'], a[href*='/holsters/'][href*='/owb']")
+                    for pl in prod_links[:30]:
+                        href = pl.get("href", "")
+                        if not href:
+                            continue
+                        url = (base + href) if not href.startswith("http") else href
+                        if url in seen:
+                            continue
+                        seen.add(url)
+                        pr = fetch_with_retry(url, timeout=10)
+                        if not pr or pr.status_code != 200:
+                            continue
+                        ps = BeautifulSoup(pr.text, "html.parser")
+                        name_el = ps.select_one("h1")
+                        if not name_el:
+                            continue
+                        name = name_el.get_text(strip=True)
+                        if not name or "holster" not in name.lower():
+                            continue
+                        price_el = ps.select_one("[class*='price'], [itemprop='price']")
+                        price = clean_price(price_el.get("content") or price_el.get_text() if price_el else None)
+                        img_el = ps.select_one("img[itemprop='image'], [class*='productView'] img")
+                        image_url = img_el.get("src", "") if img_el else ""
+                        if image_url.startswith("//"):
+                            image_url = "https:" + image_url
+                        combined = f"{name} {url}"
+                        products.append({
+                            "brand": brand, "name": name, "price": price,
+                            "image_url": image_url, "product_url": url,
+                            "carry_type": detect_carry(combined),
+                            "draw_hand": detect_hand(combined),
+                            "light": detect_light(combined),
+                            "optic": detect_optic(combined),
+                            "gun_model": detect_gun_model(combined),
+                            "material": detect_material(combined),
+                            "in_stock": None,
+                            "source": "bigcommerce_sitemap",
+                            "last_scraped": datetime.utcnow().isoformat(),
+                        })
+                        time.sleep(0.4)
         except Exception as e:
             print(f"    ❌ Vedder sitemap fallback: {e}", flush=True)
 
@@ -988,114 +1037,173 @@ def scrape_vedder():
     return products
 
 
-# ─── Tulster — BigCommerce GraphQL ───────────────────────────────────────────
+# ─── Tulster — BigCommerce + HTML fallback ───────────────────────────────────
 def scrape_tulster():
+    """Tulster — BigCommerce.
+    Uses category HTML scraping with multiple fallback selectors."""
     brand = "Tulster"
     products = []
-    print(f"  Scraping {brand} (BigCommerce)...", flush=True)
+    print(f"  Scraping {brand}...", flush=True)
     base = "https://tulster.com"
-    graphql_url = f"{base}/graphql"
-    gql_headers = {"Content-Type": "application/json", "User-Agent": HEADERS["User-Agent"]}
-
-    QUERY = """
-    query SearchProducts($searchTerm: String!, $after: String) {
-      site {
-        search {
-          searchProducts(filters: {searchTerm: $searchTerm}, sort: RELEVANCE) {
-            products(first: 50, after: $after) {
-              pageInfo { hasNextPage endCursor }
-              edges {
-                node {
-                  name path description
-                  prices { price { value } }
-                  defaultImage { url(width: 400) }
-                  categories { edges { node { name } } }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    """
     seen = set()
-    for search_term in ["holster iwb", "holster owb", "appendix holster"]:
-        cursor = None
-        while True:
-            variables = {"searchTerm": search_term}
-            if cursor:
-                variables["after"] = cursor
-            try:
-                r = requests.post(graphql_url, headers=gql_headers,
-                                  json={"query": QUERY, "variables": variables}, timeout=12)
-                if r.status_code != 200:
-                    break
-                data = r.json()
-                search_data = (data.get("data", {}).get("site", {}).get("search", {})
-                               .get("searchProducts", {}).get("products", {}))
-                for edge in search_data.get("edges", []):
-                    node = edge.get("node", {})
-                    name = node.get("name", "").strip()
-                    if not name or name in seen:
-                        continue
-                    if not any(k in name.lower() for k in ["holster", "iwb", "owb", "aiwb"]):
-                        continue
-                    seen.add(name)
-                    path = node.get("path", "")
-                    price_val = node.get("prices", {}).get("price", {}).get("value", 0)
-                    price = float(price_val) if price_val else None
-                    img = node.get("defaultImage", {})
-                    image_url = img.get("url", "") if img else ""
-                    desc = node.get("description", "")
-                    cats = " ".join(e["node"]["name"] for e in node.get("categories", {}).get("edges", []))
-                    combined = f"{name} {desc} {cats}"
-                    products.append({
-                        "brand": brand, "name": name, "price": price,
-                        "image_url": image_url, "product_url": base + path,
-                        "carry_type": detect_carry(combined),
-                        "draw_hand": detect_hand(combined),
-                        "light": detect_light(combined),
-                        "optic": detect_optic(combined),
-                        "gun_model": detect_gun_model(combined),
-                        "material": detect_material(combined),
-                        "in_stock": None,
-                        "source": "bigcommerce_graphql",
-                        "last_scraped": datetime.utcnow().isoformat(),
-                    })
-                page_info = search_data.get("pageInfo", {})
-                if page_info.get("hasNextPage"):
-                    cursor = page_info.get("endCursor")
-                else:
-                    break
-                time.sleep(0.5)
-            except Exception as e:
-                print(f"    ❌ Tulster '{search_term}': {e}", flush=True)
+
+    categories = [
+        ("/inside-the-waistband-holster/", "iwb"),
+        ("/outside-the-waistband-holster/", "owb"),
+        ("/appendix-carry/", "aiwb"),
+        ("/inside-the-waistband-holster/profile-series/", "iwb"),
+        ("/inside-the-waistband-holster/oath-series/", "iwb"),
+    ]
+
+    for path, carry_hint in categories:
+        page = 1
+        while page <= 5:
+            url = f"{base}{path}" if page == 1 else f"{base}{path}?page={page}"
+            r = fetch_with_retry(url, timeout=12)
+            if not r or r.status_code != 200:
                 break
+
+            soup = BeautifulSoup(r.text, "html.parser")
+
+            # BigCommerce uses multiple possible card selectors
+            cards = soup.select(
+                "[class*='productCard'], [class*='product-card'], "
+                "article[class*='product'], [data-product-id], "
+                "li.product, .product-item"
+            )
+            if not cards:
+                # Try generic product grid
+                cards = soup.select("[class*='listItem'], [class*='card'], .item")
+
+            new_found = 0
+            for card in cards:
+                name_el = card.select_one(
+                    "h2, h3, h4, [class*='productCard-title'], "
+                    "[class*='card-title'], [class*='product-title'], "
+                    "[class*='name'], a[href*='holster']"
+                )
+                price_el = card.select_one("[class*='price'], .price, [data-product-price]")
+                img_el = card.select_one("img[src], img[data-src]")
+                link_el = card.select_one("a[href*='/']")
+                if not name_el:
+                    continue
+                name = name_el.get_text(strip=True)
+                if not name or name in seen or len(name) < 5:
+                    continue
+                if not any(k in name.lower() for k in ["holster", "iwb", "owb", "aiwb", "profile", "oath", "contour"]):
+                    continue
+                seen.add(name)
+                new_found += 1
+                price = clean_price(price_el.get_text() if price_el else None)
+                image_url = img_el.get("src", img_el.get("data-src", "")) if img_el else ""
+                if image_url and not image_url.startswith("http"):
+                    image_url = "https:" + image_url if image_url.startswith("//") else base + image_url
+                link = link_el.get("href", "") if link_el else ""
+                if link and not link.startswith("http"):
+                    link = base + link
+                combined = f"{name} {link} {carry_hint}"
+                products.append({
+                    "brand": brand, "name": name, "price": price,
+                    "image_url": image_url, "product_url": link or base + path,
+                    "carry_type": detect_carry(combined) or carry_hint,
+                    "draw_hand": detect_hand(combined),
+                    "light": detect_light(combined),
+                    "optic": detect_optic(combined),
+                    "gun_model": detect_gun_model(combined),
+                    "material": detect_material(combined),
+                    "in_stock": None,
+                    "source": "bigcommerce_html",
+                    "last_scraped": datetime.utcnow().isoformat(),
+                })
+
+            if new_found == 0:
+                break
+            next_el = soup.select_one("a[rel='next'], [class*='pagination-next'], [class*='next']")
+            if not next_el:
+                break
+            page += 1
+            time.sleep(1.0)
 
     print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
-# ─── StealthGear — Shopify collection API ────────────────────────────────────
+# ─── StealthGear USA — Shopify with multiple collection attempts ─────────────
 def scrape_stealthgear():
+    """StealthGear USA — Shopify.
+    Tries multiple collection handles and falls back to product-by-product JSON."""
     brand = "StealthGear USA"
     products = []
     print(f"  Scraping {brand}...", flush=True)
     base = "https://stealthgearusa.com"
+    seen = set()
+
+    # Try known collection handles first
     collections = [
+        ("holsters", None),
         ("iwb-holsters", "iwb"),
         ("owb-holsters", "owb"),
         ("appendix-holsters", "aiwb"),
+        ("ventcore", "iwb"),
         ("ventcore-holsters", "iwb"),
+        ("all", None),
     ]
-    seen = set()
-    for collection_handle, carry_hint in collections:
+
+    for handle, carry_hint in collections:
         page = 1
         while True:
-            url = f"{base}/collections/{collection_handle}/products.json?limit=250&page={page}"
-            r = fetch_with_retry(url)
-            if not r or r.status_code not in (200,):
+            url = f"{base}/collections/{handle}/products.json?limit=250&page={page}"
+            r = fetch_with_retry(url, timeout=12)
+            if not r or r.status_code == 404:
                 break
+            if r.status_code != 200:
+                # Try HTML scrape of this collection
+                r2 = fetch_with_retry(f"{base}/collections/{handle}", timeout=12)
+                if r2 and r2.status_code == 200:
+                    soup = BeautifulSoup(r2.text, "html.parser")
+                    prod_links = soup.select("a[href*='/products/']")
+                    handles_found = list({
+                        a["href"].split("/products/")[1].split("?")[0].rstrip("/")
+                        for a in prod_links
+                        if "/products/" in a.get("href", "")
+                    })
+                    for ph in handles_found[:60]:
+                        pr = fetch_with_retry(f"{base}/products/{ph}.json", timeout=8)
+                        if not pr or pr.status_code != 200:
+                            continue
+                        try:
+                            item = pr.json().get("product", {})
+                            title = item.get("title", "")
+                            if not title or title in seen:
+                                continue
+                            if not any(k in (title + " " + item.get("product_type","")).lower() for k in ["holster","iwb","owb","aiwb","carry"]):
+                                continue
+                            seen.add(title)
+                            tags = " ".join(item.get("tags", []))
+                            body = BeautifulSoup(item.get("body_html",""), "html.parser").get_text(" ")
+                            combined = f"{title} {tags} {body}"
+                            images = item.get("images", [])
+                            image_url = images[0].get("src","") if images else ""
+                            variants = item.get("variants", [])
+                            price = clean_price(variants[0].get("price")) if variants else None
+                            products.append({
+                                "brand": brand, "name": title, "price": price,
+                                "image_url": image_url, "product_url": f"{base}/products/{ph}",
+                                "carry_type": detect_carry(combined) or carry_hint,
+                                "draw_hand": detect_hand(combined),
+                                "light": detect_light(combined),
+                                "optic": detect_optic(combined),
+                                "gun_model": detect_gun_model(combined),
+                                "material": detect_material(combined),
+                                "in_stock": detect_in_stock(variants),
+                                "source": "shopify_product_json",
+                                "last_scraped": datetime.utcnow().isoformat(),
+                            })
+                            time.sleep(0.3)
+                        except Exception:
+                            pass
+                break
+
             try:
                 data = r.json()
             except Exception:
@@ -1103,17 +1211,20 @@ def scrape_stealthgear():
             items = data.get("products", [])
             if not items:
                 break
+
             for item in items:
                 title = item.get("title", "")
                 if not title or title in seen:
                     continue
+                if not any(k in (title + " " + item.get("product_type","")).lower() for k in ["holster","iwb","owb","aiwb","carry"]):
+                    continue
                 seen.add(title)
-                handle = item.get("handle", "")
+                handle_p = item.get("handle", "")
                 tags = " ".join(item.get("tags", []))
-                body = BeautifulSoup(item.get("body_html", ""), "html.parser").get_text(" ")
+                body = BeautifulSoup(item.get("body_html",""), "html.parser").get_text(" ")
                 combined = f"{title} {tags} {body}"
                 images = item.get("images", [])
-                image_url = images[0].get("src", "") if images else ""
+                image_url = images[0].get("src","") if images else ""
                 variants = item.get("variants", [])
                 price = None
                 for v in variants:
@@ -1124,7 +1235,8 @@ def scrape_stealthgear():
                     price = clean_price(variants[0].get("price"))
                 products.append({
                     "brand": brand, "name": title, "price": price,
-                    "image_url": image_url, "product_url": f"{base}/products/{handle}",
+                    "image_url": image_url,
+                    "product_url": f"{base}/products/{handle_p}",
                     "carry_type": detect_carry(combined) or carry_hint,
                     "draw_hand": detect_hand(combined),
                     "light": detect_light(combined),
@@ -1135,34 +1247,89 @@ def scrape_stealthgear():
                     "source": "shopify_collection",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
+            if len(items) < 250:
+                break
             page += 1
-            time.sleep(0.5)
+            time.sleep(0.8)
+
     print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
 
-# ─── CrossBreed — Shopify collection API ─────────────────────────────────────
+# ─── CrossBreed — Shopify with multiple fallback approaches ──────────────────
 def scrape_crossbreed():
+    """CrossBreed Holsters — Shopify.
+    Uses collection JSON with HTML + product JSON fallbacks."""
     brand = "CrossBreed Holsters"
     products = []
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.crossbreedholsters.com"
+    seen = set()
+
     collections = [
+        ("holsters", None),
         ("iwb-holsters", "iwb"),
         ("owb-holsters", "owb"),
         ("appendix-carry", "aiwb"),
         ("hybrid-holsters", "iwb"),
         ("minituck", "iwb"),
         ("supertuck", "iwb"),
+        ("all-holsters", None),
     ]
-    seen = set()
-    for collection_handle, carry_hint in collections:
+
+    for handle, carry_hint in collections:
         page = 1
         while True:
-            url = f"{base}/collections/{collection_handle}/products.json?limit=250&page={page}"
-            r = fetch_with_retry(url)
-            if not r or r.status_code != 200:
+            url = f"{base}/collections/{handle}/products.json?limit=250&page={page}"
+            r = fetch_with_retry(url, timeout=12)
+            if not r or r.status_code == 404:
                 break
+            if r.status_code != 200:
+                # HTML fallback for this collection
+                r2 = fetch_with_retry(f"{base}/collections/{handle}", timeout=12)
+                if r2 and r2.status_code == 200:
+                    soup = BeautifulSoup(r2.text, "html.parser")
+                    prod_links = soup.select("a[href*='/products/']")
+                    handles_found = list({
+                        a["href"].split("/products/")[1].split("?")[0].rstrip("/")
+                        for a in prod_links
+                        if "/products/" in a.get("href", "")
+                    })
+                    for ph in handles_found[:80]:
+                        pr = fetch_with_retry(f"{base}/products/{ph}.json", timeout=8)
+                        if not pr or pr.status_code != 200:
+                            continue
+                        try:
+                            item = pr.json().get("product", {})
+                            title = item.get("title", "")
+                            if not title or title in seen:
+                                continue
+                            seen.add(title)
+                            tags = " ".join(item.get("tags", []))
+                            body = BeautifulSoup(item.get("body_html",""), "html.parser").get_text(" ")
+                            combined = f"{title} {tags} {body} {carry_hint or ''}"
+                            images = item.get("images", [])
+                            image_url = images[0].get("src","") if images else ""
+                            variants = item.get("variants", [])
+                            price = clean_price(variants[0].get("price")) if variants else None
+                            products.append({
+                                "brand": brand, "name": title, "price": price,
+                                "image_url": image_url, "product_url": f"{base}/products/{ph}",
+                                "carry_type": detect_carry(combined) or carry_hint,
+                                "draw_hand": detect_hand(combined),
+                                "light": detect_light(combined),
+                                "optic": detect_optic(combined),
+                                "gun_model": detect_gun_model(combined),
+                                "material": detect_material(combined),
+                                "in_stock": detect_in_stock(variants),
+                                "source": "shopify_product_json",
+                                "last_scraped": datetime.utcnow().isoformat(),
+                            })
+                            time.sleep(0.3)
+                        except Exception:
+                            pass
+                break
+
             try:
                 data = r.json()
             except Exception:
@@ -1170,17 +1337,18 @@ def scrape_crossbreed():
             items = data.get("products", [])
             if not items:
                 break
+
             for item in items:
                 title = item.get("title", "")
                 if not title or title in seen:
                     continue
                 seen.add(title)
-                handle = item.get("handle", "")
+                handle_p = item.get("handle", "")
                 tags = " ".join(item.get("tags", []))
-                body = BeautifulSoup(item.get("body_html", ""), "html.parser").get_text(" ")
-                combined = f"{title} {tags} {body} {carry_hint}"
+                body = BeautifulSoup(item.get("body_html",""), "html.parser").get_text(" ")
+                combined = f"{title} {tags} {body} {carry_hint or ''}"
                 images = item.get("images", [])
-                image_url = images[0].get("src", "") if images else ""
+                image_url = images[0].get("src","") if images else ""
                 variants = item.get("variants", [])
                 price = None
                 for v in variants:
@@ -1191,7 +1359,7 @@ def scrape_crossbreed():
                     price = clean_price(variants[0].get("price"))
                 products.append({
                     "brand": brand, "name": title, "price": price,
-                    "image_url": image_url, "product_url": f"{base}/products/{handle}",
+                    "image_url": image_url, "product_url": f"{base}/products/{handle_p}",
                     "carry_type": detect_carry(combined) or carry_hint,
                     "draw_hand": detect_hand(combined),
                     "light": detect_light(combined),
@@ -1202,8 +1370,11 @@ def scrape_crossbreed():
                     "source": "shopify_collection",
                     "last_scraped": datetime.utcnow().isoformat(),
                 })
+            if len(items) < 250:
+                break
             page += 1
-            time.sleep(0.5)
+            time.sleep(0.8)
+
     print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
@@ -1324,11 +1495,7 @@ SHOPIFY_BRANDS = [
     ("Concealment Express",     "https://www.concealmentexpress.com"),
     ("Tier 1 Concealed",        "https://www.tier1concealed.com"),
     ("CYA Supply",              "https://cyasupply.com"),
-    ("Clinger Holsters",        "https://clingerholsters.com"),
-    ("Rounded Gear",            "https://www.roundedgear.com"),
-    ("Hidden Hybrid",           "https://www.hiddenhybridholsters.com"),
-    ("LAG Tactical",            "https://lagtactical.com"),
-    ("TXC Holsters",            "https://txcholsters.com"),
+    ("Rounded Gear",            "https://www.roundedgear.com"),    ("LAG Tactical",            "https://lagtactical.com"),
     ("Tenicor",                 "https://tenicor.com"),
     ("Tagua Gunleather",        "https://taguagunleather.com"),
     ("Bawidamann",              "https://bawidamann.com"),
@@ -1336,15 +1503,8 @@ SHOPIFY_BRANDS = [
     ("NSR Tactical",            "https://nsrtactical.com"),
     ("Black Rhino",             "https://blackrhinoconcealment.com"),
     ("C&G Holsters",            "https://cg-holsters.com"),
-    ("Dara Holsters",           "https://daraholsters.com"),
-    ("Fury Carry Solutions",    "https://furycarry.com"),
-    ("Crossfire Elite",         "https://crossfireelite.com"),
-    ("Stealth Operator",        "https://stealthoperatorholsters.com"),
-    ("N82 Tactical",            "https://www.n82tactical.com"),
-    ("Sneaky Pete Holsters",    "https://www.sneakypeteholsters.com"),
-    ("Phalanx Defense",         "https://phalanxdefense.com"),
-    ("Recover Tactical",        "https://recover-tactical.com"),
-    ("Black Scorpion Gear",     "https://www.blackscorpiongear.com"),
+    ("Dara Holsters",           "https://daraholsters.com"),    ("Crossfire Elite",         "https://crossfireelite.com"),    ("Sneaky Pete Holsters",    "https://www.sneakypeteholsters.com"),
+    ("Phalanx Defense",         "https://phalanxdefense.com"),    ("Black Scorpion Gear",     "https://www.blackscorpiongear.com"),
     ("Haley Strategic",         "https://haleystrategic.com"),
     ("Grey Ghost Gear",         "https://www.greyghostgear.com"),
     ("Blue Force Gear",         "https://www.blueforcegear.com"),
@@ -1357,7 +1517,6 @@ SHOPIFY_BRANDS = [
     ("Just Holster It",         "https://justholsterit.com"),
     ("DME Holsters",            "https://dmeholsters.com"),
     ("Red River Tactical",      "https://rrtholsters.com"),
-    ("Houdini Holsters",        "https://houdiniholsters.com"),
     ("Eclipse Holsters",        "https://eclipseholsters.com"),
     ("Grizzle Leather",         "https://rgrizzleleather.com"),
     ("Hilliker Holsters",       "https://hillikerholsters.com"),
@@ -1388,10 +1547,7 @@ SHOPIFY_BRANDS = [
     ("Fury Tactical",           "https://furytactical.com"),
     ("Black Hills Leather",     "https://blackhillsleather.com"),
     ("Baker Leather",           "https://www.bakerleather.com"),
-    ("High Noon Holsters",      "https://highnoonholsters.com"),
-    ("K Rounds",                "https://kroundsholsters.com"),
-    ("Cloak and Carry",         "https://cloakandcarry.com"),
-    ("Gould & Goodrich",        "https://gouldusa.com"),
+    ("High Noon Holsters",      "https://highnoonholsters.com"),    ("Gould & Goodrich",        "https://gouldusa.com"),
     ("Viridian Weapon Tech",    "https://viridianweapontech.com"),
     ("Elite Survival Systems",  "https://elitesurvival.com"),
     ("Covert Carry",            "https://covertcarry.com"),
