@@ -1175,18 +1175,16 @@ SHOPIFY_BRANDS = [
     ("Alien Gear",              "https://aliengearholsters.com"),
     ("Bravo Concealment",       "https://www.bravoconcealment.com"),
     ("Concealment Express",     "https://www.concealmentexpress.com"),
-    ("Tier 1 Concealed",        "https://www.tier1concealed.com"),
+    # Tier 1 Concealed moved to CUSTOM_SCRAPERS (variant-expansion scraper)
     ("CYA Supply",              "https://cyasupply.com"),
     ("Rounded Gear",            "https://www.roundedgear.com"),    ("LAG Tactical",            "https://lagtactical.com"),
     ("Tenicor",                 "https://tenicor.com"),
-    ("Tagua Gunleather",        "https://taguagunleather.com"),
+    ("Tagua Gunleather",        "https://www.taguagunleather.com"),
     ("Bawidamann",              "https://bawidamann.com"),
     ("GunfightersINC",          "https://gunfightersinc.com"),
     ("NSR Tactical",            "https://nsrtactical.com"),
     ("Black Rhino",             "https://blackrhinoconcealment.com"),
-    ("C&G Holsters",            "https://cg-holsters.com"),
     ("Dara Holsters",           "https://daraholsters.com"),    ("Crossfire Elite",         "https://crossfireelite.com"),    ("Sneaky Pete Holsters",    "https://www.sneakypeteholsters.com"),
-    ("Phalanx Defense",         "https://phalanxdefense.com"),    ("Black Scorpion Gear",     "https://www.blackscorpiongear.com"),
     ("Haley Strategic",         "https://haleystrategic.com"),
     ("Grey Ghost Gear",         "https://www.greyghostgear.com"),
     ("Blue Force Gear",         "https://www.blueforcegear.com"),
@@ -1201,11 +1199,9 @@ SHOPIFY_BRANDS = [
     ("Red River Tactical",      "https://rrtholsters.com"),
     ("Eclipse Holsters",        "https://eclipseholsters.com"),
     ("Grizzle Leather",         "https://rgrizzleleather.com"),
-    ("Hilliker Holsters",       "https://hillikerholsters.com"),
     ("Wright Leather Works",    "https://wrightleatherworks.com"),
     ("Kirkpatrick Leather",     "https://kirkpatrickleather.com"),
     ("PS Products",             "https://psproducts.com"),
-    ("ComfortTac Premium",      "https://comforttacpremium.com"),
     ("KSG Armory",              "https://ksgarmory.com"),
     ("Talon Holsters",          "https://talonholsters.com"),
     ("Texas Holster Solutions", "https://texasholstersolutions.com"),
@@ -1214,12 +1210,12 @@ SHOPIFY_BRANDS = [
     ("Crossfire Holsters",      "https://crossfireholsters.com"),
     ("Falco Holsters",          "https://www.falcoholsters.com"),
     ("Craft Holsters",          "https://www.craftholsters.com"),
-    ("T-Rex Arms",              "https://trex-arms.com"),
-    ("Phlster Holsters",        "https://phlsterholsters.com"),
+    # T-Rex Arms moved to CUSTOM_SCRAPERS (WooCommerce)
+    # Phlster moved to CUSTOM_SCRAPERS (Cloudflare-blocked graceful skip)
     ("Safariland",              "https://safariland.com"),          # confirmed Shopify May 2026
     ("Comp-Tac Victory Gear",   "https://www.comp-tac.com"),        # confirmed Shopify May 2026
     ("Blade-Tech",              "https://blade-tech.com"),           # confirmed Shopify May 2026
-    ("Fobus",                   "https://www.fobusholster.com"),     # confirmed Shopify May 2026
+    ("Fobus",                   "https://www.fobususa.com"),     # confirmed Shopify May 2026
     ("Bianchi Leather",         "https://bianchileather.com"),
     ("El Paso Saddlery",        "https://epsaddlery.com"),
     ("Black Hills Leather",     "https://blackhillsleather.com"),
@@ -1229,7 +1225,333 @@ SHOPIFY_BRANDS = [
     ("Elite Survival Systems",  "https://elitesurvival.com"),
 ]
 
+# ─── T-Rex Arms — WooCommerce ─────────────────────────────────────────────
+def scrape_trex_arms():
+    """T-Rex Arms — WooCommerce store at trex-arms.com."""
+    brand = "T-Rex Arms"
+    products = []
+    print(f"  Scraping {brand}...", flush=True)
+    base = "https://www.trex-arms.com"
+    seen = set()
+
+    # WooCommerce REST API
+    page = 1
+    while page <= 10:
+        url = f"{base}/wp-json/wc/store/v1/products?per_page=100&page={page}&category=holster-categories"
+        r = fetch_with_retry(url, timeout=12)
+        if not r or r.status_code != 200:
+            # Try direct product page scraping
+            break
+        try:
+            items = r.json()
+            if not items:
+                break
+            for item in items:
+                name = item.get("name", "")
+                if not name or name in seen:
+                    continue
+                if not any(k in name.lower() for k in ["holster","sidecar","ragnarok","orion","erebus"]):
+                    continue
+                seen.add(name)
+                price = clean_price(str(item.get("prices",{}).get("price","0")))
+                if price:
+                    price = price / 100  # WooCommerce returns in cents
+                images = item.get("images",[])
+                image_url = images[0].get("src","") if images else ""
+                slug = item.get("slug","")
+                combined = f"{name} {slug}"
+                products.append({
+                    "brand": brand, "name": name, "price": price,
+                    "image_url": image_url,
+                    "product_url": f"{base}/product/{slug}/",
+                    "carry_type": detect_carry(combined),
+                    "draw_hand": detect_hand(combined),
+                    "light": detect_light(combined),
+                    "optic": detect_optic(combined),
+                    "gun_model": detect_gun_model(combined),
+                    "material": detect_material(combined),
+                    "in_stock": item.get("is_in_stock", None),
+                    "source": "woocommerce_api",
+                    "last_scraped": datetime.utcnow().isoformat(),
+                })
+            if len(items) < 100:
+                break
+            page += 1
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"    ❌ T-Rex WC API error: {e}", flush=True)
+            break
+
+    # Fallback: scrape HTML product category pages
+    if not products:
+        category_urls = [
+            (f"{base}/product-category/holster-categories/iwb-holsters/", "iwb"),
+            (f"{base}/product-category/holster-categories/owb-holsters/", "owb"),
+            (f"{base}/product-category/holster-categories/", None),
+        ]
+        for cat_url, carry_hint in category_urls:
+            r = fetch_with_retry(cat_url, timeout=12)
+            if not r or r.status_code != 200:
+                continue
+            soup = BeautifulSoup(r.text, "html.parser")
+            cards = soup.select("li.product, article.product, .product-item")
+            for card in cards:
+                name_el = card.select_one("h2, h3, .woocommerce-loop-product__title, .product-title")
+                if not name_el:
+                    continue
+                name = name_el.get_text(strip=True)
+                if not name or name in seen:
+                    continue
+                if not any(k in name.lower() for k in ["holster","sidecar","ragnarok","orion","erebus","duty"]):
+                    continue
+                seen.add(name)
+                price_el = card.select_one(".price, .woocommerce-Price-amount")
+                price = clean_price(price_el.get_text() if price_el else None)
+                img_el = card.select_one("img[src]")
+                image_url = img_el.get("src","") if img_el else ""
+                link_el = card.select_one("a[href*='/product/']")
+                link = link_el.get("href","") if link_el else ""
+                combined = f"{name} {link} {carry_hint or ''}"
+                products.append({
+                    "brand": brand, "name": name, "price": price,
+                    "image_url": image_url, "product_url": link or cat_url,
+                    "carry_type": detect_carry(combined) or carry_hint,
+                    "draw_hand": detect_hand(combined),
+                    "light": detect_light(combined),
+                    "optic": detect_optic(combined),
+                    "gun_model": detect_gun_model(combined),
+                    "material": detect_material(combined),
+                    "in_stock": None,
+                    "source": "woocommerce_html",
+                    "last_scraped": datetime.utcnow().isoformat(),
+                })
+            time.sleep(1.0)
+
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
+    return products
+
+
+# ─── Galco — Custom platform sitemap scraper ─────────────────────────────
+def scrape_galco():
+    """Galco Gunleather — custom platform at galcogunleather.com.
+    Scrapes their category pages and product pages directly."""
+    brand = "Galco"
+    products = []
+    print(f"  Scraping {brand}...", flush=True)
+    base = "https://www.galcogunleather.com"
+    seen = set()
+
+    # Galco organizes products by category
+    category_paths = [
+        ("/holsters_8_1.html", None),
+        ("/holsters-concealed-carry_8_1_17.html", "iwb"),
+        ("/owb-belt-holsters_8_1_16.html", "owb"),
+        ("/ankle-holsters_8_1_40.html", "ankle"),
+        ("/shoulder-holster-systems_8_2.html", "shoulder"),
+        ("/paddle-holsters_8_1_56.html", "owb-paddle"),
+    ]
+
+    for path, carry_hint in category_paths:
+        r = fetch_with_retry(base + path, timeout=12)
+        if not r or r.status_code != 200:
+            continue
+        soup = BeautifulSoup(r.text, "html.parser")
+        
+        # Find product links - Galco uses specific URL patterns
+        prod_links = soup.select("a[href*='_8_'][href$='.html']")
+        # Filter to product detail pages (deeper URL structure)
+        detail_links = [
+            a["href"] for a in prod_links
+            if a["href"].count("_8_") >= 2 and "holster" in a.get_text("").lower()
+        ]
+        
+        for href in list(set(detail_links))[:40]:
+            url = href if href.startswith("http") else base + "/" + href.lstrip("/")
+            if url in seen:
+                continue
+            seen.add(url)
+            
+            pr = fetch_with_retry(url, timeout=10)
+            if not pr or pr.status_code != 200:
+                continue
+            
+            ps = BeautifulSoup(pr.text, "html.parser")
+            name_el = ps.select_one("h1, .product-name, [class*='title']")
+            if not name_el:
+                continue
+            name = name_el.get_text(strip=True)
+            if not name or len(name) < 5:
+                continue
+            if not any(k in name.lower() for k in ["holster","rig","system","carry"]):
+                continue
+
+            price_el = ps.select_one("[class*='price'], [itemprop='price'], .price")
+            price = None
+            if price_el:
+                price_text = price_el.get("content") or price_el.get_text()
+                price = clean_price(price_text)
+            
+            img_el = ps.select_one("img[itemprop='image'], [class*='product'] img[src]")
+            image_url = ""
+            if img_el:
+                image_url = img_el.get("src","")
+                if image_url.startswith("//"):
+                    image_url = "https:" + image_url
+            
+            combined = f"{name} {url} {carry_hint or ''}"
+            products.append({
+                "brand": brand, "name": name, "price": price,
+                "image_url": image_url, "product_url": url,
+                "carry_type": detect_carry(combined) or carry_hint,
+                "draw_hand": detect_hand(combined),
+                "light": detect_light(combined),
+                "optic": detect_optic(combined),
+                "gun_model": detect_gun_model(combined),
+                "material": detect_material(combined),
+                "in_stock": None,
+                "source": "galco_custom",
+                "last_scraped": datetime.utcnow().isoformat(),
+            })
+            time.sleep(0.4)
+        time.sleep(1.0)
+
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
+    return products
+
+
+# ─── Phlster — Cloudflare protected, skipped ────────────────────────────
+def scrape_phlster():
+    """Phlster blocks scrapers via Cloudflare WAF. Skip gracefully."""
+    print(f"  ⚠️  Phlster Holsters: Cloudflare-protected, skipping", flush=True)
+    return []
+
+
+# NOTE: Tenicor, LAG Tactical, Dara Holsters also use variant-based gun models.
+# They are handled by scrape_shopify() which saves one record per product.
+# For better search results, they could be moved to variant-expansion scrapers
+# similar to scrape_tier1() in a future update.
+
+# ─── Tier 1 Concealed — Variant-expansion Shopify scraper ─────────────────
+def scrape_tier1():
+    """Tier 1 Concealed — Shopify.
+    Expands variants so each gun model fit becomes a separate DB record.
+    This makes them searchable by gun model like other brands."""
+    brand = "Tier 1 Concealed"
+    products = []
+    print(f"  Scraping {brand}...", flush=True)
+    base = "https://www.tier1concealed.com"
+    seen = set()
+    page = 1
+
+    while True:
+        url = f"{base}/products.json?limit=250&page={page}"
+        r = fetch_with_retry(url, timeout=12)
+        if not r or r.status_code != 200:
+            break
+        try:
+            data = r.json()
+        except Exception:
+            break
+        items = data.get("products", [])
+        if not items:
+            break
+
+        for item in items:
+            title = item.get("title", "")
+            handle = item.get("handle", "")
+            product_type = item.get("product_type", "")
+            tags = " ".join(item.get("tags", []))
+            body = BeautifulSoup(item.get("body_html", ""), "html.parser").get_text(" ")
+            combined_base = f"{title} {product_type} {tags} {body}"
+
+            # Skip non-holster products (apparel, accessories, hardware)
+            if not any(kw in combined_base.lower() for kw in [
+                "holster", "iwb", "owb", "aiwb", "appendix", "axis", "apx",
+                "agis", "xiphos", "echo", "t1-m", "t1m", "msp"
+            ]):
+                continue
+
+            images = item.get("images", [])
+            image_url = images[0].get("src", "") if images else ""
+            product_url = f"{base}/products/{handle}"
+            carry = detect_carry(combined_base) or "aiwb"  # T1 is mostly AIWB
+            
+            variants = item.get("variants", [])
+            
+            # Expand variants — each variant option1 is a gun model
+            variant_records = {}
+            for v in variants:
+                gun_option = v.get("option1", "") or v.get("option2", "") or ""
+                if not gun_option or gun_option.lower() in ["default title", "default", ""]:
+                    continue
+                
+                # Skip non-gun options (color, size, etc.)
+                gun_option_clean = gun_option.strip()
+                if len(gun_option_clean) < 3:
+                    continue
+                
+                # Deduplicate by gun model
+                if gun_option_clean in variant_records:
+                    continue
+                
+                price = clean_price(v.get("price"))
+                in_stock = v.get("available", True)
+                combined = f"{title} {gun_option_clean} {combined_base}"
+                
+                variant_records[gun_option_clean] = {
+                    "brand": brand,
+                    "name": f"{title} — {gun_option_clean}",
+                    "price": price,
+                    "image_url": image_url,
+                    "product_url": product_url,
+                    "carry_type": carry,
+                    "draw_hand": detect_hand(combined),
+                    "light": detect_light(combined),
+                    "optic": detect_optic(combined),
+                    "gun_model": detect_gun_model(combined) or gun_option_clean,
+                    "material": "Kydex",
+                    "in_stock": in_stock,
+                    "source": "shopify_variants",
+                    "last_scraped": datetime.utcnow().isoformat(),
+                }
+            
+            if variant_records:
+                products.extend(variant_records.values())
+            else:
+                # No variants with gun models — save as single record
+                key = f"{title}"
+                if key not in seen:
+                    seen.add(key)
+                    price = clean_price(variants[0].get("price")) if variants else None
+                    products.append({
+                        "brand": brand,
+                        "name": title,
+                        "price": price,
+                        "image_url": image_url,
+                        "product_url": product_url,
+                        "carry_type": carry,
+                        "draw_hand": detect_hand(combined_base),
+                        "light": detect_light(combined_base),
+                        "optic": detect_optic(combined_base),
+                        "gun_model": detect_gun_model(combined_base),
+                        "material": "Kydex",
+                        "in_stock": detect_in_stock(variants),
+                        "source": "shopify",
+                        "last_scraped": datetime.utcnow().isoformat(),
+                    })
+
+        page += 1
+        time.sleep(1.5)
+
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
+    return products
+
+
 CUSTOM_SCRAPERS = [
+    scrape_tier1,         # Shopify variant-expansion
+    scrape_trex_arms,     # WooCommerce
+    scrape_galco,         # custom platform
+    scrape_phlster,       # Cloudflare-protected skip
     scrape_blackhawk,     # custom platform — sitemap approach
     scrape_galco,         # custom platform — fixed URLs
     scrape_desantis,      # custom platform — sitemap approach
