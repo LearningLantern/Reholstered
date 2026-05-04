@@ -1183,6 +1183,7 @@ SHOPIFY_BRANDS = [
     ("Bawidamann",              "https://bawidamann.com"),
     ("GunfightersINC",          "https://gunfightersinc.com"),
     ("NSR Tactical",            "https://nsrtactical.com"),
+    ("Black Scorpion Gear",     "https://www.blackscorpiongear.com"),
     ("Black Rhino",             "https://blackrhinoconcealment.com"),
     ("Dara Holsters",           "https://daraholsters.com"),    ("Crossfire Elite",         "https://crossfireelite.com"),    ("Sneaky Pete Holsters",    "https://www.sneakypeteholsters.com"),
     ("Haley Strategic",         "https://haleystrategic.com"),
@@ -1215,7 +1216,7 @@ SHOPIFY_BRANDS = [
     ("Safariland",              "https://safariland.com"),          # confirmed Shopify May 2026
     ("Comp-Tac Victory Gear",   "https://www.comp-tac.com"),        # confirmed Shopify May 2026
     ("Blade-Tech",              "https://blade-tech.com"),           # confirmed Shopify May 2026
-    ("Fobus",                   "https://www.fobususa.com"),     # confirmed Shopify May 2026
+    # Fobus — fobususa.com dead, fobusholster.com dead — removed until correct URL found
     ("Bianchi Leather",         "https://bianchileather.com"),
     ("El Paso Saddlery",        "https://epsaddlery.com"),
     ("Black Hills Leather",     "https://blackhillsleather.com"),
@@ -1332,15 +1333,6 @@ def scrape_trex_arms():
 
 
 # ─── Galco — Custom platform sitemap scraper ─────────────────────────────
-def scrape_galco():
-    """Galco Gunleather — custom platform at galcogunleather.com.
-    Scrapes their category pages and product pages directly."""
-    brand = "Galco"
-    products = []
-    print(f"  Scraping {brand}...", flush=True)
-    base = "https://www.galcogunleather.com"
-    seen = set()
-
     # Galco organizes products by category
     category_paths = [
         ("/holsters_8_1.html", None),
@@ -1503,7 +1495,7 @@ def scrape_tier1():
                     "name": f"{title} — {gun_option_clean}",
                     "price": price,
                     "image_url": image_url,
-                    "product_url": product_url,
+                    "product_url": f"{product_url}?variant={gun_option_clean.replace(chr(32), '-').replace('/', '-').lower()[:50]}",
                     "carry_type": carry,
                     "draw_hand": detect_hand(combined),
                     "light": detect_light(combined),
@@ -1553,7 +1545,6 @@ CUSTOM_SCRAPERS = [
     scrape_galco,         # custom platform
     scrape_phlster,       # Cloudflare-protected skip
     scrape_blackhawk,     # custom platform — sitemap approach
-    scrape_galco,         # custom platform — fixed URLs
     scrape_desantis,      # custom platform — sitemap approach
     scrape_gcode,         # tacticalholsters.com — fixed URL
     scrape_miltsparks,    # fixed category URLs
