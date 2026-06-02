@@ -512,40 +512,9 @@ document.addEventListener('click', function(e) {
         <div class="search-label">Optic Cut</div>
         <div class="select-wrap">
           <select id="optic">
-            <option value="">No optic</option>
-            <option value="any-mos">Any Optic Cut / MOS</option>
-            <optgroup label="─── Holosun ───">
-              <option value="holosun-507c">Holosun 507C</option>
-              <option value="holosun-508t">Holosun 508T</option>
-              <option value="holosun-509t">Holosun 509T</option>
-              <option value="holosun-407c">Holosun 407C</option>
-              <option value="holosun-510c">Holosun 510C</option>
-            </optgroup>
-            <optgroup label="─── Trijicon ───">
-              <option value="trijicon-rmr">Trijicon RMR / RMR Type 2</option>
-              <option value="trijicon-sro">Trijicon SRO</option>
-              <option value="trijicon-rmrcc">Trijicon RMRcc</option>
-            </optgroup>
-            <optgroup label="─── Leupold ───">
-              <option value="leupold-deltapoint">Leupold DeltaPoint Pro</option>
-            </optgroup>
-            <optgroup label="─── Shield ───">
-              <option value="shield-sms">Shield SMS</option>
-              <option value="shield-rmsc">Shield RMSc</option>
-            </optgroup>
-            <optgroup label="─── Sig ───">
-              <option value="sig-romeo0">Sig Romeo Zero / Elite</option>
-              <option value="sig-romeo1">Sig Romeo1 Pro</option>
-            </optgroup>
-            <optgroup label="─── Vortex ───">
-              <option value="vortex-venom">Vortex Venom</option>
-              <option value="vortex-razor">Vortex Razor</option>
-            </optgroup>
-            <optgroup label="─── Other ───">
-              <option value="eotech-eflx">EOTech EFLX</option>
-              <option value="burris-fastfire">Burris FastFire</option>
-              <option value="crimson-trace">Crimson Trace CTS-1550</option>
-            </optgroup>
+            <option value="">No Preference</option>
+            <option value="yes">Yes — Optic Cut</option>
+            <option value="no">No Optic Cut</option>
           </select>
         </div>
       </div>
@@ -695,6 +664,12 @@ async function querySupabase(filters, sortBy) {
   }
 
   // Weapon light filter
+  if (filters.optic === 'yes') {
+    url += `&optic=not.is.null`;
+  } else if (filters.optic === 'no') {
+    url += `&optic=is.null`;
+  }
+
   if (filters.light === 'any') {
     url += `&light=not.is.null`;
   } else if (filters.light === 'sf-x300') {
