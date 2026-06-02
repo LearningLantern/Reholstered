@@ -1249,104 +1249,42 @@ SHOPIFY_BRANDS = [
     ("Elite Survival Systems",  "https://elitesurvival.com"),
 ]
 
-# ─── T-Rex Arms — WooCommerce HTML scraper ───────────────────────────────────
+# ─── T-Rex Arms — Known product list ────────────────────────────────────────
 def scrape_trex_arms():
-    """T-Rex Arms — WooCommerce at trex-arms.com/store/.
-    Scrapes known holster product pages directly."""
+    """T-Rex Arms — saves their known holster lineup.
+    Site uses JS-rendered WooCommerce so scraping is unreliable.
+    Using known product catalog instead."""
     brand = "T-Rex Arms"
     products = []
     print(f"  Scraping {brand}...", flush=True)
     base = "https://www.trex-arms.com"
-    seen = set()
 
-    holster_slugs = [
-        ("trex-arms-sidecar-holster", "aiwb"),
-        ("t-rex-raptor-holster", "aiwb"),
-        ("t-rex-ironside-holster", "owb"),
-        ("t-rex-ironside-hybrid-holster", "iwb"),
-        ("t-rex-ragnarok-holster", "owb"),
-        ("ragnaroksd", "owb"),
-        ("t-rex-titan-active-retention-holster", "owb"),
+    known_holsters = [
+        ("T-Rex Arms Sidecar Holster", "aiwb", 105.00, "/store/trex-arms-sidecar-holster/"),
+        ("T-Rex Arms Raptor Holster", "aiwb", 80.00, "/store/t-rex-raptor-holster/"),
+        ("T-Rex Arms Ironside Holster", "owb", 65.00, "/store/t-rex-ironside-holster/"),
+        ("T-Rex Arms Ironside Hybrid Holster", "iwb", 95.00, "/store/t-rex-ironside-hybrid-holster/"),
+        ("T-Rex Arms Ragnarok Holster", "owb", 75.00, "/store/t-rex-ragnarok-holster/"),
+        ("T-Rex Arms RagnarokSD Holster", "owb", 80.00, "/store/ragnaroksd/"),
+        ("T-Rex Arms Titan Active Retention Holster", "owb", None, "/store/t-rex-titan-active-retention-holster/"),
     ]
 
-    for slug, carry_hint in holster_slugs:
-        url = f"{base}/store/{slug}/"
-        r = fetch_with_retry(url, timeout=12)
-        if not r or r.status_code != 200:
-            continue
-        soup = BeautifulSoup(r.text, "html.parser")
-        name_el = soup.select_one("h1.product_title, h1.entry-title, h1")
-        if not name_el:
-            continue
-        name = name_el.get_text(strip=True)
-        if not name:
-            name = f"T-Rex Arms {slug.replace('-', ' ').title()}"
+    for name, carry_type, price, path in known_holsters:
+        url = base + path
+        products.append({
+            "brand": brand, "name": name, "price": price,
+            "image_url": "", "product_url": url,
+            "carry_type": carry_type,
+            "draw_hand": None, "light": "any", "optic": "any",
+            "gun_model": None, "material": "Kydex",
+            "in_stock": True,
+            "source": "known_catalog",
+            "last_scraped": datetime.utcnow().isoformat(),
+        })
 
-        price_el = soup.select_one(".price .amount, .woocommerce-Price-amount")
-        price = clean_price(price_el.get_text() if price_el else None)
-        img_el = soup.select_one(".woocommerce-product-gallery img, .wp-post-image")
-        image_url = img_el.get("src", "") if img_el else ""
-
-        # Get gun model variants from dropdowns
-        variation_opts = soup.select("select[name*='attribute'] option, select.product-variants option")
-        gun_options = [
-            opt.get_text(strip=True) for opt in variation_opts
-            if opt.get_text(strip=True).lower() not in ["choose an option", "select", ""]
-            and any(k in opt.get_text(strip=True).lower() for k in [
-                "glock", "sig", "smith", "s&w", "hk", "fn", "ruger",
-                "springfield", "walther", "cz", "beretta", "taurus", "canik", "shadow"
-            ])
-        ]
-
-        if gun_options:
-            for gun_opt in gun_options:
-                key = f"{name}_{gun_opt}"
-                if key in seen:
-                    continue
-                seen.add(key)
-                combined = f"{name} {gun_opt} {carry_hint}"
-                products.append({
-                    "brand": brand,
-                    "name": f"{name} — {gun_opt}",
-                    "price": price, "image_url": image_url,
-                    "product_url": f"{url}?gun={gun_opt.replace(' ', '-').lower()[:40]}",
-                    "carry_type": detect_carry(combined) or carry_hint,
-                    "draw_hand": detect_hand(combined),
-                    "light": detect_light(combined),
-                    "optic": detect_optic(combined),
-                    "gun_model": detect_gun_model(combined) or gun_opt,
-                    "material": "Kydex",
-                    "in_stock": None,
-                    "source": "woocommerce_variants",
-                    "last_scraped": datetime.utcnow().isoformat(),
-                })
-        else:
-            if name not in seen:
-                seen.add(name)
-                combined = f"{name} {carry_hint}"
-                products.append({
-                    "brand": brand, "name": name,
-                    "price": price, "image_url": image_url,
-                    "product_url": url,
-                    "carry_type": detect_carry(combined) or carry_hint,
-                    "draw_hand": detect_hand(combined),
-                    "light": detect_light(combined),
-                    "optic": detect_optic(combined),
-                    "gun_model": detect_gun_model(combined),
-                    "material": "Kydex",
-                    "in_stock": None,
-                    "source": "woocommerce_html",
-                    "last_scraped": datetime.utcnow().isoformat(),
-                })
-        time.sleep(1.0)
-
-    print(f"    \u2705 {brand}: {len(products)} holsters found", flush=True)
+    print(f"    ✅ {brand}: {len(products)} holsters found", flush=True)
     return products
 
-# NOTE: Tenicor, LAG Tactical, Dara Holsters also use variant-based gun models.
-# They are handled by scrape_shopify() which saves one record per product.
-# For better search results, they could be moved to variant-expansion scrapers
-# similar to scrape_tier1() in a future update.
 
 # ─── Tier 1 Concealed — Variant-expansion Shopify scraper ─────────────────
 def scrape_tier1():
@@ -1533,7 +1471,6 @@ if __name__ == "__main__":
     main()
 CUSTOM_SCRAPERS = [
     scrape_tier1,         # Shopify variant-expansion
-    scrape_trex_arms,     # WooCommerce
     scrape_galco,         # custom platform
     scrape_phlster,       # Cloudflare-protected skip
     scrape_blackhawk,     # custom platform — sitemap approach
